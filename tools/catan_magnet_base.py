@@ -1,30 +1,31 @@
-"""Swap the Catan base's 3x6 mm cylinder slots for enclosed D pockets that let a
-5x3 mm disc magnet turn freely (OpenForge style), sealed with a print pause."""
+"""Catan base for 5x3 mm disc magnets, inserted after printing like the original:
+each D pocket has a 5.6 x 5.2 mm channel from the inside of the hex, closed by a
+printed plug that restores the rim and leaves the round end of the D for the magnet."""
 import sys, numpy as np, trimesh
 from shapely.geometry import Polygon, Point, box
 from shapely.ops import unary_union
-SRC, OUT = sys.argv[1], sys.argv[2]
-FLOOR, CAV = 0.4, 5.2          # floor thickness, cavity height (roof = rim top - FLOOR - CAV)
-D_W = 5.6                      # pocket width and round-end diameter (5 mm disc + clearance)
-WALL = 1.0                     # wall between pocket and the outer edge face (OpenForge uses 1.0)
+from shapely import affinity
+SRC, OUT_BASE, OUT_ALL = sys.argv[1:4]
+FLOOR, CAV, D_W, WALL, FIT = 0.4, 5.2, 5.6, 1.0, 0.1
 
 m = trimesh.load(SRC); m.merge_vertices()
 trimesh.repair.fix_normals(m); trimesh.repair.fill_holes(m)
 m.update_faces(m.nondegenerate_faces()); m.remove_unreferenced_vertices()
-assert m.is_watertight
 c = (m.bounds[0][:2] + m.bounds[1][:2]) / 2
-APO = m.bounds[1][0] - c[0]    # centre to flat outer face (39.5)
+APO = m.bounds[1][0] - c[0]
+# keep only the hex body (drop the designer's old plugs printed in the centre)
+parts = m.split(only_watertight=False)
+body = max(parts, key=lambda p: p.volume)
+print('designer file: %d bodies; keeping the hex (%.0f mm3), dropping %d old plugs' % (len(parts), body.volume, len(parts) - 1))
 
-# rim cross-section between the old slots (plane y = c + 12, +x edge): polygon in (r, z)
-sec = m.section([0, 1, 0], [0, c[1] + 12, 0])
-loops = [np.asarray(e) for e in sec.discrete]
-rim = max((Polygon(np.c_[l[:, 0] - c[0], l[:, 2]]) for l in loops if l[:, 0].mean() > c[0]), key=lambda p: p.area).buffer(0)
+sec = body.section([0, 1, 0], [0, c[1] + 12, 0])
+rim = max((Polygon(np.c_[np.asarray(l)[:, 0] - c[0], np.asarray(l)[:, 2]]) for l in sec.discrete
+           if np.asarray(l)[:, 0].mean() > c[0]), key=lambda p: p.area).buffer(0)
 rim = rim.intersection(box(25, -1, APO, 10))
-print('rim profile r %.2f..%.2f, z %.2f..%.2f' % (rim.bounds[0], rim.bounds[2], rim.bounds[1], rim.bounds[3]))
+r_in = rim.bounds[0]
 
 def extrude_rz(poly, t0, t1):
-    """(r,z) polygon swept along t in [t0,t1] -> mesh in local frame (x=r, y=t, z=z)."""
-    e = trimesh.creation.extrude_polygon(poly, t1 - t0)       # (x=r, y=z, z=t)
+    e = trimesh.creation.extrude_polygon(poly, t1 - t0)
     v = e.vertices.copy(); e.vertices = np.c_[v[:, 0], v[:, 2] + t0, v[:, 1]]
     if e.volume < 0: e.invert()
     return e
@@ -32,16 +33,39 @@ def extrude_rz(poly, t0, t1):
 def to_edge(mesh, ang):
     R = trimesh.transformations.rotation_matrix(np.radians(ang), [0, 0, 1])
     T = trimesh.transformations.translation_matrix([c[0], c[1], 0])
-    out = mesh.copy(); out.apply_transform(T @ R); return out
+    o = mesh.copy(); o.apply_transform(T @ R); return o
 
-plug = extrude_rz(rim, -4.2, 4.2)                     # fills the old 7 mm slot with the normal rim shape
-rb = APO - WALL                                       # flat face of the D
-D = unary_union([box(rb - D_W / 2, -D_W / 2, rb, D_W / 2), Point(rb - D_W / 2, 0).buffer(D_W / 2, quad_segs=32)])
-pocket = trimesh.creation.extrude_polygon(D, CAV); pocket.vertices[:, 2] += FLOOR
+rb = APO - WALL; rc = rb - D_W / 2           # D flat face and round-end centre
+D = unary_union([box(rc, -D_W / 2, rb, D_W / 2), Point(rc, 0).buffer(D_W / 2, quad_segs=32)])
+chan = box(r_in - 1, -D_W / 2, rc, D_W / 2)  # straight channel from the inside to the D
+cut2d = unary_union([D, chan])
+cut = trimesh.creation.extrude_polygon(cut2d, CAV); cut.vertices[:, 2] += FLOOR
+plugfill = extrude_rz(rim, -4.2, 4.2)        # fill the old slot with plain rim first
+
 angles = [0, 60, 120, 180, 240, 300]
-out = trimesh.boolean.union([m] + [to_edge(plug, a) for a in angles], engine='manifold')
-out = trimesh.boolean.difference([out] + [to_edge(pocket, a) for a in angles], engine='manifold')
-print('result watertight', out.is_watertight, 'volume %.1f -> %.1f' % (m.volume, out.volume))
-print('pocket: D %.1f wide x %.1f deep, floor %.1f, cavity %.1f tall (z %.1f..%.1f), roof %.2f; outer wall %.1f, inner wall %.2f'
-      % (D_W, D_W, FLOOR, CAV, FLOOR, FLOOR + CAV, 6.0 - FLOOR - CAV, WALL, rb - D_W - 32.2))
-out.export(OUT)
+base = trimesh.boolean.union([body] + [to_edge(plugfill, a) for a in angles], engine='manifold')
+base = trimesh.boolean.difference([base] + [to_edge(cut, a) for a in angles], engine='manifold')
+
+# plug = rim cross-section inside the channel (z FLOOR..FLOOR+CAV), minus the round end of the D,
+# shrunk by FIT on the sides, top and bottom so it pushes in
+win = box(r_in - 1, FLOOR + FIT, rc, FLOOR + CAV - FIT)
+prof = rim.intersection(win)
+plug = extrude_rz(prof, -D_W / 2 + FIT, D_W / 2 - FIT)
+roundend = trimesh.creation.cylinder(radius=D_W / 2, height=20, sections=96)
+roundend.apply_translation([rc, 0, 3])
+plug = trimesh.boolean.difference([plug, roundend], engine='manifold')
+print('plug: %.2f (r) x %.2f (t) x %.2f (z) mm, volume %.1f mm3' % tuple(list(plug.extents) + [plug.volume]))
+
+# lay plugs flat for printing (channel side-face down) in the centre of the hex, like the original
+flat = plug.copy()
+flat.apply_transform(trimesh.transformations.rotation_matrix(np.radians(-90), [1, 0, 0]))
+flat.apply_translation(-flat.bounds[0])
+w, d = flat.extents[0], flat.extents[1]
+plugs = []
+for i in range(6):
+    p = flat.copy(); p.apply_translation([c[0] - 1.5 * w - 2 + (i % 3) * (w + 2), c[1] - d - 1 + (i // 3) * (d + 2), 0])
+    plugs.append(p)
+allm = trimesh.util.concatenate([base] + plugs)
+inside = all(np.linalg.norm(p.bounds.mean(0)[:2] - c) < 22 for p in plugs)
+print('base watertight', base.is_watertight, '| plugs sit in the centre opening:', inside, '| plug footprint %.1f x %.1f, height %.1f' % (w, d, flat.extents[2]))
+base.export(OUT_BASE); allm.export(OUT_ALL)
