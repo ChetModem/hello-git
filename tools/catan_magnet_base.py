@@ -6,7 +6,7 @@ from shapely.geometry import Polygon, Point, box
 from shapely.ops import unary_union
 from shapely import affinity
 SRC, OUT_BASE, OUT_ALL = sys.argv[1:4]
-FLOOR, CAV, D_W, WALL, FIT = 0.4, 5.2, 5.6, 1.0, 0.1
+FLOOR, CAV, D_W, WALL, FIT = 0.4, 5.2, 6.3, 1.0, 0.1   # D_W must exceed the disc diagonal sqrt(5^2+3^2)=5.83 to let it turn
 
 m = trimesh.load(SRC); m.merge_vertices()
 trimesh.repair.fix_normals(m); trimesh.repair.fill_holes(m)
