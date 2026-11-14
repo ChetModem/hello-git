@@ -106,7 +106,10 @@ S = re.sub(r'<item objectid="(\d+)"[^>]*transform="([^"]*)"[^>]*/>', level, S)
 def object_parts(oid):
     ob = S[S.find(f'<object id="{oid}"'):]; ob = ob[:ob.find('</object>')]
     out = []
-    for path, cid, tr in re.findall(r'<component p:path="([^"]+)" objectid="(\d+)"[^>]*transform="([^"]*)"', ob):
+    mo = re.search(rf'<object id="{oid}">.*?</object>', MS, re.S)
+    subtypes = re.findall(r'<part id="\d+" subtype="(\w+)"', mo.group(0)) if mo else []
+    for k, (path, cid, tr) in enumerate(re.findall(r'<component p:path="([^"]+)" objectid="(\d+)"[^>]*transform="([^"]*)"', ob)):
+        if k < len(subtypes) and subtypes[k] != 'normal_part': continue      # modifiers are not solid
         m = get_mesh(path.split('/')[-1], cid)
         if m is None: continue
         m = m.copy(); m.apply_translation(list(map(float, tr.split()[9:12]))); out.append((path.split('/')[-1], cid, m))

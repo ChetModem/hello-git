@@ -8,8 +8,12 @@ def mesh(fn,cid):
     o=open(f'{D}/3D/Objects/{fn}').read(); i=o.find(f'<object id="{cid}"'); b=o[i:o.find('</object>',i)]
     v=np.array(re.findall(r'<vertex x="([^"]+)" y="([^"]+)" z="([^"]+)"',b),float); t=np.array(re.findall(r'<triangle v1="(\d+)" v2="(\d+)" v3="(\d+)"',b),int); return trimesh.Trimesh(v,t,process=False)
 ob=S[S.find(f'<object id="{oid}"'):]; ob=ob[:ob.find('</object>')]
+MS=open(f'{D}/Metadata/model_settings.config').read()
+mo=re.search(rf'<object id="{oid}">.*?</object>',MS,re.S).group(0)
+subtypes=re.findall(r'<part id="\d+" subtype="(\w+)"',mo)   # same order as the components
 ms=[]
-for path,cid,tr in re.findall(r'<component p:path="([^"]+)" objectid="(\d+)"[^>]*transform="([^"]*)"',ob):
+for k,(path,cid,tr) in enumerate(re.findall(r'<component p:path="([^"]+)" objectid="(\d+)"[^>]*transform="([^"]*)"',ob)):
+    if k<len(subtypes) and subtypes[k]!='normal_part': continue   # modifiers are not printed material
     m=mesh(path.split('/')[-1],cid); m.apply_translation(list(map(float,tr.split()[9:12]))); ms.append((cid,m))
 z0=min(m.bounds[0][2] for _,m in ms)
 for _,m in ms: m.apply_translation([0,0,-z0])
