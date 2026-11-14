@@ -1,0 +1,1280 @@
+{
+ "repair": {
+  "object_3037.model#76": {
+   "before": {
+    "faces": 580,
+    "volume": 1056.56
+   },
+   "after": {
+    "faces": 580,
+    "volume": 1056.56
+   },
+   "junk_removed": 0,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_3037.model#77": {
+   "before": {
+    "faces": 3454,
+    "volume": 236.29
+   },
+   "after": {
+    "faces": 3454,
+    "volume": 236.29
+   },
+   "junk_removed": 0,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_3037.model#78": {
+   "before": {
+    "faces": 1240,
+    "volume": 701.9
+   },
+   "after": {
+    "faces": 1240,
+    "volume": 701.9
+   },
+   "junk_removed": 0,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_3037.model#79": {
+   "before": {
+    "faces": 48,
+    "volume": 144.78
+   },
+   "after": {
+    "faces": 48,
+    "volume": 144.78
+   },
+   "junk_removed": 0,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_2640.model#114": {
+   "before": {
+    "faces": 5056,
+    "volume": 277.63
+   },
+   "after": {
+    "faces": 4830,
+    "volume": 277.64
+   },
+   "junk_removed": 3,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_1847.model#86": {
+   "before": {
+    "faces": 2272,
+    "volume": 1536.43
+   },
+   "after": {
+    "faces": 2272,
+    "volume": 1536.43
+   },
+   "junk_removed": 0,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_1847.model#87": {
+   "before": {
+    "faces": 2400,
+    "volume": 1651.56
+   },
+   "after": {
+    "faces": 2400,
+    "volume": 1651.56
+   },
+   "junk_removed": 0,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_1847.model#88": {
+   "before": {
+    "faces": 2162,
+    "volume": 87.43
+   },
+   "after": {
+    "faces": 2162,
+    "volume": 87.43
+   },
+   "junk_removed": 0,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_1847.model#89": {
+   "before": {
+    "faces": 822,
+    "volume": 8.7
+   },
+   "after": {
+    "faces": 822,
+    "volume": 8.7
+   },
+   "junk_removed": 0,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_1791.model#71": {
+   "before": {
+    "faces": 6294,
+    "volume": 10887.81
+   },
+   "after": {
+    "faces": 6294,
+    "volume": 10887.81
+   },
+   "junk_removed": 0,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_1791.model#72": {
+   "before": {
+    "faces": 5440,
+    "volume": 938.5
+   },
+   "after": {
+    "faces": 5440,
+    "volume": 938.5
+   },
+   "junk_removed": 0,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_1791.model#73": {
+   "before": {
+    "faces": 3094,
+    "volume": 155.69
+   },
+   "after": {
+    "faces": 3094,
+    "volume": 155.69
+   },
+   "junk_removed": 0,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_1791.model#74": {
+   "before": {
+    "faces": 492,
+    "volume": 8.58
+   },
+   "after": {
+    "faces": 492,
+    "volume": 8.58
+   },
+   "junk_removed": 0,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_3132.model#24": {
+   "before": {
+    "faces": 944,
+    "volume": 10342.12
+   },
+   "after": {
+    "faces": 944,
+    "volume": 10342.12
+   },
+   "junk_removed": 0,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_3132.model#25": {
+   "before": {
+    "faces": 13884,
+    "volume": 2436.57
+   },
+   "after": {
+    "faces": 13884,
+    "volume": 2436.57
+   },
+   "junk_removed": 0,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_3132.model#26": {
+   "before": {
+    "faces": 3344,
+    "volume": 467.18
+   },
+   "after": {
+    "faces": 3344,
+    "volume": 467.18
+   },
+   "junk_removed": 0,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_3132.model#27": {
+   "before": {
+    "faces": 5982,
+    "volume": 557.45
+   },
+   "after": {
+    "faces": 5964,
+    "volume": 557.45
+   },
+   "junk_removed": 1,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_3061.model#55": {
+   "before": {
+    "faces": 5544,
+    "volume": 9932.42
+   },
+   "after": {
+    "faces": 5544,
+    "volume": 9932.42
+   },
+   "junk_removed": 0,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_3061.model#56": {
+   "before": {
+    "faces": 8108,
+    "volume": 421.32
+   },
+   "after": {
+    "faces": 8062,
+    "volume": 421.31
+   },
+   "junk_removed": 3,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_3061.model#57": {
+   "before": {
+    "faces": 2328,
+    "volume": 52.4
+   },
+   "after": {
+    "faces": 2264,
+    "volume": 52.39
+   },
+   "junk_removed": 5,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_3138.model#34": {
+   "before": {
+    "faces": 694,
+    "volume": 11580.83
+   },
+   "after": {
+    "faces": 694,
+    "volume": 11580.83
+   },
+   "junk_removed": 0,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_3138.model#35": {
+   "before": {
+    "faces": 63972,
+    "volume": 6488.22
+   },
+   "after": {
+    "faces": 63968,
+    "volume": 6488.22
+   },
+   "junk_removed": 2,
+   "bodies_closed": 1,
+   "all_watertight": true
+  },
+  "object_3138.model#36": {
+   "before": {
+    "faces": 1416,
+    "volume": 66.32
+   },
+   "after": {
+    "faces": 1416,
+    "volume": 66.32
+   },
+   "junk_removed": 0,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_3138.model#37": {
+   "before": {
+    "faces": 8808,
+    "volume": 189.18
+   },
+   "after": {
+    "faces": 8806,
+    "volume": 189.18
+   },
+   "junk_removed": 0,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_3138.model#38": {
+   "before": {
+    "faces": 1416,
+    "volume": 66.32
+   },
+   "after": {
+    "faces": 1416,
+    "volume": 66.32
+   },
+   "junk_removed": 0,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_3127.model#10": {
+   "before": {
+    "faces": 1170,
+    "volume": 19022.66
+   },
+   "after": {
+    "faces": 1170,
+    "volume": 19022.66
+   },
+   "junk_removed": 0,
+   "bodies_closed": 1,
+   "all_watertight": true
+  },
+  "object_3127.model#11": {
+   "before": {
+    "faces": 1762,
+    "volume": 205.3
+   },
+   "after": {
+    "faces": 1762,
+    "volume": 205.3
+   },
+   "junk_removed": 0,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_3127.model#12": {
+   "before": {
+    "faces": 5382,
+    "volume": 274.78
+   },
+   "after": {
+    "faces": 5366,
+    "volume": 274.78
+   },
+   "junk_removed": 1,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_3127.model#13": {
+   "before": {
+    "faces": 4646,
+    "volume": 113.42
+   },
+   "after": {
+    "faces": 4646,
+    "volume": 113.42
+   },
+   "junk_removed": 0,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_3168.model#99": {
+   "before": {
+    "faces": 540,
+    "volume": 173.21
+   },
+   "after": {
+    "faces": 540,
+    "volume": 173.21
+   },
+   "junk_removed": 0,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_2106.model#102": {
+   "before": {
+    "faces": 7872,
+    "volume": 4830.16
+   },
+   "after": {
+    "faces": 7872,
+    "volume": 4830.16
+   },
+   "junk_removed": 0,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_2106.model#103": {
+   "before": {
+    "faces": 4320,
+    "volume": 1139.7
+   },
+   "after": {
+    "faces": 4320,
+    "volume": 1139.7
+   },
+   "junk_removed": 0,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_2106.model#104": {
+   "before": {
+    "faces": 12380,
+    "volume": 12793.23
+   },
+   "after": {
+    "faces": 12380,
+    "volume": 12793.23
+   },
+   "junk_removed": 0,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_2106.model#105": {
+   "before": {
+    "faces": 3328,
+    "volume": 500.05
+   },
+   "after": {
+    "faces": 3328,
+    "volume": 500.05
+   },
+   "junk_removed": 0,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_3125.model#15": {
+   "before": {
+    "faces": 942,
+    "volume": 1494.57
+   },
+   "after": {
+    "faces": 942,
+    "volume": 1494.57
+   },
+   "junk_removed": 0,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_3125.model#16": {
+   "before": {
+    "faces": 380,
+    "volume": 313.36
+   },
+   "after": {
+    "faces": 380,
+    "volume": 313.36
+   },
+   "junk_removed": 0,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_3125.model#17": {
+   "before": {
+    "faces": 7192,
+    "volume": 698.04
+   },
+   "after": {
+    "faces": 7168,
+    "volume": 698.04
+   },
+   "junk_removed": 3,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_3125.model#18": {
+   "before": {
+    "faces": 6046,
+    "volume": 627.11
+   },
+   "after": {
+    "faces": 6042,
+    "volume": 627.11
+   },
+   "junk_removed": 1,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_2637.model#108": {
+   "before": {
+    "faces": 27928,
+    "volume": 274.8
+   },
+   "after": {
+    "faces": 27396,
+    "volume": 274.76
+   },
+   "junk_removed": 13,
+   "bodies_closed": 1,
+   "all_watertight": true
+  },
+  "object_3111.model#1": {
+   "before": {
+    "faces": 6304,
+    "volume": 10868.53
+   },
+   "after": {
+    "faces": 6292,
+    "volume": 10868.53
+   },
+   "junk_removed": 2,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_3111.model#2": {
+   "before": {
+    "faces": 9750,
+    "volume": 553.15
+   },
+   "after": {
+    "faces": 9682,
+    "volume": 553.15
+   },
+   "junk_removed": 6,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_3111.model#3": {
+   "before": {
+    "faces": 2838,
+    "volume": 59.07
+   },
+   "after": {
+    "faces": 2780,
+    "volume": 59.06
+   },
+   "junk_removed": 5,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_2639.model#112": {
+   "before": {
+    "faces": 424,
+    "volume": 261.97
+   },
+   "after": {
+    "faces": 424,
+    "volume": 261.97
+   },
+   "junk_removed": 0,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_2636.model#94": {
+   "before": {
+    "faces": 2518,
+    "volume": 247.37
+   },
+   "after": {
+    "faces": 2518,
+    "volume": 247.37
+   },
+   "junk_removed": 0,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_3143.model#44": {
+   "before": {
+    "faces": 838,
+    "volume": 17353.08
+   },
+   "after": {
+    "faces": 838,
+    "volume": 17353.08
+   },
+   "junk_removed": 0,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_3143.model#45": {
+   "before": {
+    "faces": 2952,
+    "volume": 234.38
+   },
+   "after": {
+    "faces": 2952,
+    "volume": 234.38
+   },
+   "junk_removed": 0,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_3143.model#46": {
+   "before": {
+    "faces": 10842,
+    "volume": 537.84
+   },
+   "after": {
+    "faces": 10842,
+    "volume": 537.84
+   },
+   "junk_removed": 0,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_3143.model#47": {
+   "before": {
+    "faces": 596,
+    "volume": 153.2
+   },
+   "after": {
+    "faces": 596,
+    "volume": 153.2
+   },
+   "junk_removed": 0,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_3143.model#48": {
+   "before": {
+    "faces": 838,
+    "volume": 17353.08
+   },
+   "after": {
+    "faces": 838,
+    "volume": 17353.08
+   },
+   "junk_removed": 0,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_3143.model#49": {
+   "before": {
+    "faces": 2952,
+    "volume": 234.38
+   },
+   "after": {
+    "faces": 2952,
+    "volume": 234.38
+   },
+   "junk_removed": 0,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_3143.model#50": {
+   "before": {
+    "faces": 10842,
+    "volume": 537.84
+   },
+   "after": {
+    "faces": 10842,
+    "volume": 537.84
+   },
+   "junk_removed": 0,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_3143.model#51": {
+   "before": {
+    "faces": 838,
+    "volume": 17353.08
+   },
+   "after": {
+    "faces": 838,
+    "volume": 17353.08
+   },
+   "junk_removed": 0,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_3143.model#52": {
+   "before": {
+    "faces": 2952,
+    "volume": 234.38
+   },
+   "after": {
+    "faces": 2952,
+    "volume": 234.38
+   },
+   "junk_removed": 0,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_3126.model#5": {
+   "before": {
+    "faces": 3674,
+    "volume": 12455.29
+   },
+   "after": {
+    "faces": 3674,
+    "volume": 12455.29
+   },
+   "junk_removed": 0,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_3126.model#6": {
+   "before": {
+    "faces": 1578,
+    "volume": 6484.83
+   },
+   "after": {
+    "faces": 1578,
+    "volume": 6484.83
+   },
+   "junk_removed": 0,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_3126.model#7": {
+   "before": {
+    "faces": 5974,
+    "volume": 223.97
+   },
+   "after": {
+    "faces": 5974,
+    "volume": 223.97
+   },
+   "junk_removed": 0,
+   "bodies_closed": 0,
+   "all_watertight": true
+  },
+  "object_3126.model#8": {
+   "before": {
+    "faces": 3796,
+    "volume": 627.47
+   },
+   "after": {
+    "faces": 3796,
+    "volume": 627.47
+   },
+   "junk_removed": 0,
+   "bodies_closed": 0,
+   "all_watertight": true
+  }
+ },
+ "items_levelled": [
+  "harbor_base_-_1 (object 19): tilt 0.047 deg removed",
+  "harbor_base_-_1 (object 21): tilt 0.047 deg removed",
+  "harbor_base_-_1 (object 31): tilt 0.047 deg removed",
+  "harbor_base_-_1 (object 69): tilt 0.047 deg removed",
+  "harbor_base_-_1 (object 81): tilt 0.027 deg removed",
+  "harbor_base_-_1 (object 83): tilt 0.047 deg removed",
+  "harbor_base_-_1 (object 85): tilt 0.047 deg removed",
+  "harbor_base_-_1 (object 91): tilt 0.047 deg removed",
+  "harbor_base_-_1 (object 93): tilt 0.047 deg removed"
+ ],
+ "recess": {
+  "object_1791.model#71": {
+   "diameter": 27.89,
+   "floor": 2.4,
+   "raised_vertices": 6,
+   "max_raise": 0.01,
+   "fixed": true
+  },
+  "object_2106.model#102": "no token recess",
+  "object_2106.model#103": "no token recess",
+  "object_2106.model#104": "no token recess",
+  "object_3111.model#1": "no token recess",
+  "object_3126.model#5": {
+   "diameter": 27.88,
+   "floor": 2.646,
+   "raised_vertices": 0,
+   "max_raise": 0
+  },
+  "object_3127.model#10": {
+   "diameter": 27.92,
+   "floor": 2.4,
+   "raised_vertices": 0,
+   "max_raise": 0
+  },
+  "object_3132.model#24": {
+   "diameter": 27.93,
+   "floor": 2.4,
+   "raised_vertices": 0,
+   "max_raise": 0
+  },
+  "object_3138.model#34": {
+   "diameter": 27.92,
+   "floor": 2.4,
+   "raised_vertices": 3,
+   "max_raise": 0.076,
+   "fixed": true
+  },
+  "object_3143.model#44": {
+   "diameter": 27.84,
+   "floor": 2.4,
+   "raised_vertices": 1,
+   "max_raise": 0.037,
+   "fixed": true
+  },
+  "object_3143.model#48": {
+   "diameter": 27.84,
+   "floor": 2.4,
+   "raised_vertices": 1,
+   "max_raise": 0.037,
+   "fixed": true
+  },
+  "object_3143.model#51": {
+   "diameter": 27.84,
+   "floor": 2.4,
+   "raised_vertices": 1,
+   "max_raise": 0.037,
+   "fixed": true
+  }
+ },
+ "fill": {
+  "4 water_-_1": {
+   "before_mm2": 0.0
+  },
+  "9 Zusammenbau": {
+   "before_mm2": 74.03,
+   "fill_mm3": 151.7,
+   "after_mm2": 0.52,
+   "widest_left_mm": 0.25,
+   "fill_watertight": true
+  },
+  "14 Zusammenbau": {
+   "before_mm2": 43.95,
+   "fill_mm3": 15.0,
+   "after_mm2": 0.0,
+   "widest_left_mm": 0,
+   "fill_watertight": true
+  },
+  "19 harbor_base_-_1": {
+   "before_mm2": 3.09,
+   "fill_mm3": 0.5,
+   "after_mm2": 0.0,
+   "widest_left_mm": 0,
+   "fill_watertight": true
+  },
+  "20 harbor_base_-_1": {
+   "before_mm2": 3.09,
+   "fill_mm3": 0.5,
+   "after_mm2": 0.0,
+   "widest_left_mm": 0,
+   "fill_watertight": true,
+   "mesh_ref": [
+    "object_3125.model",
+    "19",
+    1458
+   ]
+  },
+  "21 harbor_base_-_1": {
+   "before_mm2": 3.09,
+   "fill_mm3": 0.5,
+   "after_mm2": 0.0,
+   "widest_left_mm": 0,
+   "fill_watertight": true,
+   "mesh_ref": [
+    "object_3125.model",
+    "19",
+    1458
+   ]
+  },
+  "22 water_-_1": {
+   "before_mm2": 0.0
+  },
+  "23 harbor_base_-_1": {
+   "before_mm2": 3.09,
+   "fill_mm3": 0.5,
+   "after_mm2": 0.0,
+   "widest_left_mm": 0,
+   "fill_watertight": true,
+   "mesh_ref": [
+    "object_3125.model",
+    "19",
+    1458
+   ]
+  },
+  "28 Zusammenbau": {
+   "before_mm2": 24.18,
+   "fill_mm3": 7.6,
+   "after_mm2": 1.42,
+   "widest_left_mm": 0.22,
+   "fill_watertight": true
+  },
+  "29 harbor_base_-_1": {
+   "before_mm2": 3.09,
+   "fill_mm3": 0.5,
+   "after_mm2": 0.0,
+   "widest_left_mm": 0,
+   "fill_watertight": true,
+   "mesh_ref": [
+    "object_3125.model",
+    "19",
+    1458
+   ]
+  },
+  "30 water_-_1": {
+   "before_mm2": 0.0
+  },
+  "31 harbor_base_-_1": {
+   "before_mm2": 3.09,
+   "fill_mm3": 0.5,
+   "after_mm2": 0.0,
+   "widest_left_mm": 0,
+   "fill_watertight": true,
+   "mesh_ref": [
+    "object_3125.model",
+    "19",
+    1458
+   ]
+  },
+  "32 water_-_1": {
+   "before_mm2": 0.0
+  },
+  "33 water_-_1": {
+   "before_mm2": 0.0
+  },
+  "39 Zusammenbau": {
+   "before_mm2": 291.13,
+   "fill_mm3": 682.1,
+   "after_mm2": 13.45,
+   "widest_left_mm": 0.3,
+   "fill_watertight": true
+  },
+  "40 water_-_1": {
+   "before_mm2": 0.0
+  },
+  "41 harbor_base_-_1": {
+   "before_mm2": 3.09,
+   "fill_mm3": 0.5,
+   "after_mm2": 0.0,
+   "widest_left_mm": 0,
+   "fill_watertight": true,
+   "mesh_ref": [
+    "object_3125.model",
+    "19",
+    1458
+   ]
+  },
+  "42 water_-_1": {
+   "before_mm2": 0.0
+  },
+  "43 water_-_1": {
+   "before_mm2": 0.0
+  },
+  "53 Zusammenbau": {
+   "before_mm2": 31.09,
+   "fill_mm3": 8.8,
+   "after_mm2": 0.65,
+   "widest_left_mm": 0.2,
+   "fill_watertight": true
+  },
+  "54 water_-_1": {
+   "before_mm2": 0.0
+  },
+  "58 harbor_water_-_1": {
+   "before_mm2": 0.0
+  },
+  "59 harbor_base_-_1": {
+   "before_mm2": 3.09,
+   "fill_mm3": 0.5,
+   "after_mm2": 0.0,
+   "widest_left_mm": 0,
+   "fill_watertight": true,
+   "mesh_ref": [
+    "object_3125.model",
+    "19",
+    1458
+   ]
+  },
+  "60 harbor_water_-_1": {
+   "before_mm2": 0.0
+  },
+  "61 harbor_water_-_1": {
+   "before_mm2": 0.0
+  },
+  "62 harbor_water_-_1": {
+   "before_mm2": 0.0
+  },
+  "63 harbor_water_-_1": {
+   "before_mm2": 0.0
+  },
+  "64 harbor_base_-_1": {
+   "before_mm2": 3.09,
+   "fill_mm3": 0.5,
+   "after_mm2": 0.0,
+   "widest_left_mm": 0,
+   "fill_watertight": true,
+   "mesh_ref": [
+    "object_3125.model",
+    "19",
+    1458
+   ]
+  },
+  "65 harbor_water_-_1": {
+   "before_mm2": 0.0
+  },
+  "66 harbor_base_-_1": {
+   "before_mm2": 3.09,
+   "fill_mm3": 0.5,
+   "after_mm2": 0.0,
+   "widest_left_mm": 0,
+   "fill_watertight": true,
+   "mesh_ref": [
+    "object_3125.model",
+    "19",
+    1458
+   ]
+  },
+  "67 harbor_base_-_1": {
+   "before_mm2": 3.09,
+   "fill_mm3": 0.5,
+   "after_mm2": 0.0,
+   "widest_left_mm": 0,
+   "fill_watertight": true,
+   "mesh_ref": [
+    "object_3125.model",
+    "19",
+    1458
+   ]
+  },
+  "68 harbor_water_-_1": {
+   "before_mm2": 0.0
+  },
+  "69 harbor_base_-_1": {
+   "before_mm2": 3.09,
+   "fill_mm3": 0.5,
+   "after_mm2": 0.0,
+   "widest_left_mm": 0,
+   "fill_watertight": true,
+   "mesh_ref": [
+    "object_3125.model",
+    "19",
+    1458
+   ]
+  },
+  "70 harbor_water_-_1": {
+   "before_mm2": 0.0
+  },
+  "75 desert_-_1": {
+   "before_mm2": 1.76,
+   "fill_mm3": 0.2,
+   "after_mm2": 0.0,
+   "widest_left_mm": 0,
+   "fill_watertight": true
+  },
+  "80 harbor_top_-_1": {
+   "before_mm2": 12.85,
+   "fill_mm3": 3.2,
+   "after_mm2": 0.0,
+   "widest_left_mm": 0,
+   "fill_watertight": true
+  },
+  "81 harbor_base_-_1": {
+   "before_mm2": 3.09,
+   "fill_mm3": 0.5,
+   "after_mm2": 0.0,
+   "widest_left_mm": 0,
+   "fill_watertight": true,
+   "mesh_ref": [
+    "object_3125.model",
+    "19",
+    1458
+   ]
+  },
+  "82 harbor_base_-_1": {
+   "before_mm2": 3.09,
+   "fill_mm3": 0.5,
+   "after_mm2": 0.0,
+   "widest_left_mm": 0,
+   "fill_watertight": true,
+   "mesh_ref": [
+    "object_3125.model",
+    "19",
+    1458
+   ]
+  },
+  "83 harbor_base_-_1": {
+   "before_mm2": 3.09,
+   "fill_mm3": 0.5,
+   "after_mm2": 0.0,
+   "widest_left_mm": 0,
+   "fill_watertight": true,
+   "mesh_ref": [
+    "object_3125.model",
+    "19",
+    1458
+   ]
+  },
+  "84 harbor_top_-_1": {
+   "before_mm2": 12.85,
+   "fill_mm3": 3.2,
+   "after_mm2": 0.0,
+   "widest_left_mm": 0,
+   "fill_watertight": true,
+   "mesh_ref": [
+    "object_3037.model",
+    "80",
+    5628
+   ]
+  },
+  "85 harbor_base_-_1": {
+   "before_mm2": 3.09,
+   "fill_mm3": 0.5,
+   "after_mm2": 0.0,
+   "widest_left_mm": 0,
+   "fill_watertight": true,
+   "mesh_ref": [
+    "object_3125.model",
+    "19",
+    1458
+   ]
+  },
+  "90 sandstorm_-_1": {
+   "before_mm2": 0.45
+  },
+  "91 harbor_base_-_1": {
+   "before_mm2": 3.09,
+   "fill_mm3": 0.5,
+   "after_mm2": 0.0,
+   "widest_left_mm": 0,
+   "fill_watertight": true,
+   "mesh_ref": [
+    "object_3125.model",
+    "19",
+    1458
+   ]
+  },
+  "92 harbor_top_-_1": {
+   "before_mm2": 12.85,
+   "fill_mm3": 3.2,
+   "after_mm2": 0.0,
+   "widest_left_mm": 0,
+   "fill_watertight": true,
+   "mesh_ref": [
+    "object_3037.model",
+    "80",
+    5628
+   ]
+  },
+  "93 harbor_base_-_1": {
+   "before_mm2": 3.09,
+   "fill_mm3": 0.5,
+   "after_mm2": 0.0,
+   "widest_left_mm": 0,
+   "fill_watertight": true,
+   "mesh_ref": [
+    "object_3125.model",
+    "19",
+    1458
+   ]
+  },
+  "95 harbor_wood.stl": {
+   "before_mm2": 2.91,
+   "fill_mm3": 3.6,
+   "after_mm2": 0.0,
+   "widest_left_mm": 0,
+   "fill_watertight": true
+  },
+  "96 harbor_top_-_1": {
+   "before_mm2": 12.85,
+   "fill_mm3": 3.2,
+   "after_mm2": 0.0,
+   "widest_left_mm": 0,
+   "fill_watertight": true,
+   "mesh_ref": [
+    "object_3037.model",
+    "80",
+    5628
+   ]
+  },
+  "97 harbor_water_-_1": {
+   "before_mm2": 0.0
+  },
+  "98 harbor_top_-_1": {
+   "before_mm2": 12.85,
+   "fill_mm3": 3.2,
+   "after_mm2": 0.0,
+   "widest_left_mm": 0,
+   "fill_watertight": true,
+   "mesh_ref": [
+    "object_3037.model",
+    "80",
+    5628
+   ]
+  },
+  "100 Zusammenbau": {
+   "before_mm2": 0.0
+  },
+  "101 harbor_top_-_1": {
+   "before_mm2": 12.85,
+   "fill_mm3": 3.2,
+   "after_mm2": 0.0,
+   "widest_left_mm": 0,
+   "fill_watertight": true,
+   "mesh_ref": [
+    "object_3037.model",
+    "80",
+    5628
+   ]
+  },
+  "106 number_tokens_-_1": {
+   "before_mm2": 0.0
+  },
+  "107 harbor_top_-_1": {
+   "before_mm2": 12.85,
+   "fill_mm3": 3.2,
+   "after_mm2": 0.0,
+   "widest_left_mm": 0,
+   "fill_watertight": true,
+   "mesh_ref": [
+    "object_3037.model",
+    "80",
+    5628
+   ]
+  },
+  "109 harbor_wheet.stl": {
+   "before_mm2": 0.87,
+   "fill_mm3": 0.1,
+   "after_mm2": 0.0,
+   "widest_left_mm": 0,
+   "fill_watertight": true
+  },
+  "110 harbor_top_-_1": {
+   "before_mm2": 12.85,
+   "fill_mm3": 3.2,
+   "after_mm2": 0.0,
+   "widest_left_mm": 0,
+   "fill_watertight": true,
+   "mesh_ref": [
+    "object_3037.model",
+    "80",
+    5628
+   ]
+  },
+  "111 harbor_top_-_1": {
+   "before_mm2": 12.85,
+   "fill_mm3": 3.2,
+   "after_mm2": 0.0,
+   "widest_left_mm": 0,
+   "fill_watertight": true,
+   "mesh_ref": [
+    "object_3037.model",
+    "80",
+    5628
+   ]
+  },
+  "113 harbor_brick.stl": {
+   "before_mm2": 0.56,
+   "fill_mm3": 0.6,
+   "after_mm2": 0.0,
+   "widest_left_mm": 0,
+   "fill_watertight": true
+  },
+  "115 harbor_ore.stl": {
+   "before_mm2": 9.24,
+   "fill_mm3": 5.8,
+   "after_mm2": 0.0,
+   "widest_left_mm": 0,
+   "fill_watertight": true
+  }
+ },
+ "warnings": [
+  "object_3138.model#35: 1 edge(s) where surfaces touched; separated without moving any geometry",
+  "object_3127.model#10: 1 edge(s) where surfaces touched; separated without moving any geometry",
+  "object_2637.model#108: body closed, volume 274.795->274.757 mm3"
+ ],
+ "dropped_to_plate": [
+  "harbor_base_-_1 (object 19): z offset +0.0073 mm corrected",
+  "harbor_base_-_1 (object 21): z offset +0.0073 mm corrected",
+  "harbor_base_-_1 (object 31): z offset +0.0073 mm corrected",
+  "harbor_base_-_1 (object 69): z offset +0.0073 mm corrected",
+  "harbor_base_-_1 (object 81): z offset +0.0034 mm corrected",
+  "harbor_base_-_1 (object 83): z offset +0.0073 mm corrected",
+  "harbor_base_-_1 (object 85): z offset +0.0073 mm corrected",
+  "harbor_base_-_1 (object 91): z offset +0.0073 mm corrected",
+  "harbor_base_-_1 (object 93): z offset +0.0073 mm corrected"
+ ]
+}
