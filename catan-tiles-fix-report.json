@@ -818,47 +818,47 @@
   },
   "9 Zusammenbau": {
    "before_mm2": 74.03,
-   "fill_mm3": 151.7,
-   "after_mm2": 0.52,
-   "widest_left_mm": 0.25,
+   "fill_mm3": 159.7,
+   "after_mm2": 1.82,
+   "widest_left_mm": 0.16,
    "fill_watertight": true
   },
   "14 Zusammenbau": {
    "before_mm2": 43.95,
-   "fill_mm3": 15.0,
-   "after_mm2": 0.0,
-   "widest_left_mm": 0,
+   "fill_mm3": 12.7,
+   "after_mm2": 34.48,
+   "widest_left_mm": 1.52,
    "fill_watertight": true
   },
   "19 harbor_base_-_1": {
    "before_mm2": 3.09,
-   "fill_mm3": 0.5,
-   "after_mm2": 0.0,
-   "widest_left_mm": 0,
+   "fill_mm3": 6.5,
+   "after_mm2": 0.42,
+   "widest_left_mm": 0.07,
    "fill_watertight": true
   },
   "20 harbor_base_-_1": {
    "before_mm2": 3.09,
-   "fill_mm3": 0.5,
-   "after_mm2": 0.0,
-   "widest_left_mm": 0,
+   "fill_mm3": 6.5,
+   "after_mm2": 0.42,
+   "widest_left_mm": 0.07,
    "fill_watertight": true,
    "mesh_ref": [
     "object_3125.model",
     "19",
-    1458
+    2574
    ]
   },
   "21 harbor_base_-_1": {
    "before_mm2": 3.09,
-   "fill_mm3": 0.5,
-   "after_mm2": 0.0,
-   "widest_left_mm": 0,
+   "fill_mm3": 6.5,
+   "after_mm2": 0.42,
+   "widest_left_mm": 0.07,
    "fill_watertight": true,
    "mesh_ref": [
     "object_3125.model",
     "19",
-    1458
+    2574
    ]
   },
   "22 water_-_1": {
@@ -866,33 +866,33 @@
   },
   "23 harbor_base_-_1": {
    "before_mm2": 3.09,
-   "fill_mm3": 0.5,
-   "after_mm2": 0.0,
-   "widest_left_mm": 0,
+   "fill_mm3": 6.5,
+   "after_mm2": 0.42,
+   "widest_left_mm": 0.07,
    "fill_watertight": true,
    "mesh_ref": [
     "object_3125.model",
     "19",
-    1458
+    2574
    ]
   },
   "28 Zusammenbau": {
    "before_mm2": 24.18,
-   "fill_mm3": 7.6,
-   "after_mm2": 1.42,
-   "widest_left_mm": 0.22,
+   "fill_mm3": 7.7,
+   "after_mm2": 1.85,
+   "widest_left_mm": 0.24,
    "fill_watertight": true
   },
   "29 harbor_base_-_1": {
    "before_mm2": 3.09,
-   "fill_mm3": 0.5,
-   "after_mm2": 0.0,
-   "widest_left_mm": 0,
+   "fill_mm3": 6.5,
+   "after_mm2": 0.42,
+   "widest_left_mm": 0.07,
    "fill_watertight": true,
    "mesh_ref": [
     "object_3125.model",
     "19",
-    1458
+    2574
    ]
   },
   "30 water_-_1": {
@@ -900,14 +900,14 @@
   },
   "31 harbor_base_-_1": {
    "before_mm2": 3.09,
-   "fill_mm3": 0.5,
-   "after_mm2": 0.0,
-   "widest_left_mm": 0,
+   "fill_mm3": 6.5,
+   "after_mm2": 0.42,
+   "widest_left_mm": 0.07,
    "fill_watertight": true,
    "mesh_ref": [
     "object_3125.model",
     "19",
-    1458
+    2574
    ]
   },
   "32 water_-_1": {
@@ -918,9 +918,9 @@
   },
   "39 Zusammenbau": {
    "before_mm2": 291.13,
-   "fill_mm3": 682.1,
-   "after_mm2": 13.45,
-   "widest_left_mm": 0.3,
+   "fill_mm3": 705.8,
+   "after_mm2": 13.25,
+   "widest_left_mm": 0.28,
    "fill_watertight": true
   },
   "40 water_-_1": {
@@ -928,14 +928,14 @@
   },
   "41 harbor_base_-_1": {
    "before_mm2": 3.09,
-   "fill_mm3": 0.5,
-   "after_mm2": 0.0,
-   "widest_left_mm": 0,
+   "fill_mm3": 6.5,
+   "after_mm2": 0.42,
+   "widest_left_mm": 0.07,
    "fill_watertight": true,
    "mesh_ref": [
     "object_3125.model",
     "19",
-    1458
+    2574
    ]
   },
   "42 water_-_1": {
@@ -946,9 +946,9 @@
   },
   "53 Zusammenbau": {
    "before_mm2": 31.09,
-   "fill_mm3": 8.8,
-   "after_mm2": 0.65,
-   "widest_left_mm": 0.2,
+   "fill_mm3": 10.9,
+   "after_mm2": 0.37,
+   "widest_left_mm": 0.22,
    "fill_watertight": true
   },
   "54 water_-_1": {
@@ -959,14 +959,14 @@
   },
   "59 harbor_base_-_1": {
    "before_mm2": 3.09,
-   "fill_mm3": 0.5,
-   "after_mm2": 0.0,
-   "widest_left_mm": 0,
+   "fill_mm3": 6.5,
+   "after_mm2": 0.42,
+   "widest_left_mm": 0.07,
    "fill_watertight": true,
    "mesh_ref": [
     "object_3125.model",
     "19",
-    1458
+    2574
    ]
   },
   "60 harbor_water_-_1": {
@@ -983,14 +983,14 @@
   },
   "64 harbor_base_-_1": {
    "before_mm2": 3.09,
-   "fill_mm3": 0.5,
-   "after_mm2": 0.0,
-   "widest_left_mm": 0,
+   "fill_mm3": 6.5,
+   "after_mm2": 0.42,
+   "widest_left_mm": 0.07,
    "fill_watertight": true,
    "mesh_ref": [
     "object_3125.model",
     "19",
-    1458
+    2574
    ]
   },
   "65 harbor_water_-_1": {
@@ -998,26 +998,26 @@
   },
   "66 harbor_base_-_1": {
    "before_mm2": 3.09,
-   "fill_mm3": 0.5,
-   "after_mm2": 0.0,
-   "widest_left_mm": 0,
+   "fill_mm3": 6.5,
+   "after_mm2": 0.42,
+   "widest_left_mm": 0.07,
    "fill_watertight": true,
    "mesh_ref": [
     "object_3125.model",
     "19",
-    1458
+    2574
    ]
   },
   "67 harbor_base_-_1": {
    "before_mm2": 3.09,
-   "fill_mm3": 0.5,
-   "after_mm2": 0.0,
-   "widest_left_mm": 0,
+   "fill_mm3": 6.5,
+   "after_mm2": 0.42,
+   "widest_left_mm": 0.07,
    "fill_watertight": true,
    "mesh_ref": [
     "object_3125.model",
     "19",
-    1458
+    2574
    ]
   },
   "68 harbor_water_-_1": {
@@ -1025,14 +1025,14 @@
   },
   "69 harbor_base_-_1": {
    "before_mm2": 3.09,
-   "fill_mm3": 0.5,
-   "after_mm2": 0.0,
-   "widest_left_mm": 0,
+   "fill_mm3": 6.5,
+   "after_mm2": 0.42,
+   "widest_left_mm": 0.07,
    "fill_watertight": true,
    "mesh_ref": [
     "object_3125.model",
     "19",
-    1458
+    2574
    ]
   },
   "70 harbor_water_-_1": {
@@ -1040,76 +1040,76 @@
   },
   "75 desert_-_1": {
    "before_mm2": 1.76,
-   "fill_mm3": 0.2,
+   "fill_mm3": 0.3,
    "after_mm2": 0.0,
    "widest_left_mm": 0,
    "fill_watertight": true
   },
   "80 harbor_top_-_1": {
    "before_mm2": 12.85,
-   "fill_mm3": 3.2,
-   "after_mm2": 0.0,
-   "widest_left_mm": 0,
+   "fill_mm3": 4.2,
+   "after_mm2": 0.44,
+   "widest_left_mm": 0.09,
    "fill_watertight": true
   },
   "81 harbor_base_-_1": {
    "before_mm2": 3.09,
-   "fill_mm3": 0.5,
-   "after_mm2": 0.0,
-   "widest_left_mm": 0,
+   "fill_mm3": 6.5,
+   "after_mm2": 0.42,
+   "widest_left_mm": 0.07,
    "fill_watertight": true,
    "mesh_ref": [
     "object_3125.model",
     "19",
-    1458
+    2574
    ]
   },
   "82 harbor_base_-_1": {
    "before_mm2": 3.09,
-   "fill_mm3": 0.5,
-   "after_mm2": 0.0,
-   "widest_left_mm": 0,
+   "fill_mm3": 6.5,
+   "after_mm2": 0.42,
+   "widest_left_mm": 0.07,
    "fill_watertight": true,
    "mesh_ref": [
     "object_3125.model",
     "19",
-    1458
+    2574
    ]
   },
   "83 harbor_base_-_1": {
    "before_mm2": 3.09,
-   "fill_mm3": 0.5,
-   "after_mm2": 0.0,
-   "widest_left_mm": 0,
+   "fill_mm3": 6.5,
+   "after_mm2": 0.42,
+   "widest_left_mm": 0.07,
    "fill_watertight": true,
    "mesh_ref": [
     "object_3125.model",
     "19",
-    1458
+    2574
    ]
   },
   "84 harbor_top_-_1": {
    "before_mm2": 12.85,
-   "fill_mm3": 3.2,
-   "after_mm2": 0.0,
-   "widest_left_mm": 0,
+   "fill_mm3": 4.2,
+   "after_mm2": 0.44,
+   "widest_left_mm": 0.09,
    "fill_watertight": true,
    "mesh_ref": [
     "object_3037.model",
     "80",
-    5628
+    5414
    ]
   },
   "85 harbor_base_-_1": {
    "before_mm2": 3.09,
-   "fill_mm3": 0.5,
-   "after_mm2": 0.0,
-   "widest_left_mm": 0,
+   "fill_mm3": 6.5,
+   "after_mm2": 0.42,
+   "widest_left_mm": 0.07,
    "fill_watertight": true,
    "mesh_ref": [
     "object_3125.model",
     "19",
-    1458
+    2574
    ]
   },
   "90 sandstorm_-_1": {
@@ -1117,57 +1117,57 @@
   },
   "91 harbor_base_-_1": {
    "before_mm2": 3.09,
-   "fill_mm3": 0.5,
-   "after_mm2": 0.0,
-   "widest_left_mm": 0,
+   "fill_mm3": 6.5,
+   "after_mm2": 0.42,
+   "widest_left_mm": 0.07,
    "fill_watertight": true,
    "mesh_ref": [
     "object_3125.model",
     "19",
-    1458
+    2574
    ]
   },
   "92 harbor_top_-_1": {
    "before_mm2": 12.85,
-   "fill_mm3": 3.2,
-   "after_mm2": 0.0,
-   "widest_left_mm": 0,
+   "fill_mm3": 4.2,
+   "after_mm2": 0.44,
+   "widest_left_mm": 0.09,
    "fill_watertight": true,
    "mesh_ref": [
     "object_3037.model",
     "80",
-    5628
+    5414
    ]
   },
   "93 harbor_base_-_1": {
    "before_mm2": 3.09,
-   "fill_mm3": 0.5,
-   "after_mm2": 0.0,
-   "widest_left_mm": 0,
+   "fill_mm3": 6.5,
+   "after_mm2": 0.42,
+   "widest_left_mm": 0.07,
    "fill_watertight": true,
    "mesh_ref": [
     "object_3125.model",
     "19",
-    1458
+    2574
    ]
   },
   "95 harbor_wood.stl": {
    "before_mm2": 2.91,
-   "fill_mm3": 3.6,
+   "fill_mm3": 4.1,
    "after_mm2": 0.0,
    "widest_left_mm": 0,
    "fill_watertight": true
   },
   "96 harbor_top_-_1": {
    "before_mm2": 12.85,
-   "fill_mm3": 3.2,
-   "after_mm2": 0.0,
-   "widest_left_mm": 0,
+   "fill_mm3": 4.2,
+   "after_mm2": 0.44,
+   "widest_left_mm": 0.09,
    "fill_watertight": true,
    "mesh_ref": [
     "object_3037.model",
     "80",
-    5628
+    5414
    ]
   },
   "97 harbor_water_-_1": {
@@ -1175,14 +1175,14 @@
   },
   "98 harbor_top_-_1": {
    "before_mm2": 12.85,
-   "fill_mm3": 3.2,
-   "after_mm2": 0.0,
-   "widest_left_mm": 0,
+   "fill_mm3": 4.2,
+   "after_mm2": 0.44,
+   "widest_left_mm": 0.09,
    "fill_watertight": true,
    "mesh_ref": [
     "object_3037.model",
     "80",
-    5628
+    5414
    ]
   },
   "100 Zusammenbau": {
@@ -1190,14 +1190,14 @@
   },
   "101 harbor_top_-_1": {
    "before_mm2": 12.85,
-   "fill_mm3": 3.2,
-   "after_mm2": 0.0,
-   "widest_left_mm": 0,
+   "fill_mm3": 4.2,
+   "after_mm2": 0.44,
+   "widest_left_mm": 0.09,
    "fill_watertight": true,
    "mesh_ref": [
     "object_3037.model",
     "80",
-    5628
+    5414
    ]
   },
   "106 number_tokens_-_1": {
@@ -1205,14 +1205,14 @@
   },
   "107 harbor_top_-_1": {
    "before_mm2": 12.85,
-   "fill_mm3": 3.2,
-   "after_mm2": 0.0,
-   "widest_left_mm": 0,
+   "fill_mm3": 4.2,
+   "after_mm2": 0.44,
+   "widest_left_mm": 0.09,
    "fill_watertight": true,
    "mesh_ref": [
     "object_3037.model",
     "80",
-    5628
+    5414
    ]
   },
   "109 harbor_wheet.stl": {
@@ -1224,26 +1224,26 @@
   },
   "110 harbor_top_-_1": {
    "before_mm2": 12.85,
-   "fill_mm3": 3.2,
-   "after_mm2": 0.0,
-   "widest_left_mm": 0,
+   "fill_mm3": 4.2,
+   "after_mm2": 0.44,
+   "widest_left_mm": 0.09,
    "fill_watertight": true,
    "mesh_ref": [
     "object_3037.model",
     "80",
-    5628
+    5414
    ]
   },
   "111 harbor_top_-_1": {
    "before_mm2": 12.85,
-   "fill_mm3": 3.2,
-   "after_mm2": 0.0,
-   "widest_left_mm": 0,
+   "fill_mm3": 4.2,
+   "after_mm2": 0.44,
+   "widest_left_mm": 0.09,
    "fill_watertight": true,
    "mesh_ref": [
     "object_3037.model",
     "80",
-    5628
+    5414
    ]
   },
   "113 harbor_brick.stl": {
@@ -1255,7 +1255,7 @@
   },
   "115 harbor_ore.stl": {
    "before_mm2": 9.24,
-   "fill_mm3": 5.8,
+   "fill_mm3": 5.9,
    "after_mm2": 0.0,
    "widest_left_mm": 0,
    "fill_watertight": true

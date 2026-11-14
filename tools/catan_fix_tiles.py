@@ -168,10 +168,19 @@ def safe_z(zall, z):
         z += 1.3e-4
     return z
 
-def layers_of(meshes, ztop):
+def layers_of(meshes, ztop, agree=False):
+    """Layer outlines sampled at two heights per layer.
+    agree=False: union of the two (for measuring overhangs; a missed piece would look like an overhang).
+    agree=True: only where BOTH samples have material (for building fill). trimesh occasionally
+    mis-joins a slice outline into a phantom region; a phantom in one sample must never become
+    'material above' or fill grows under nothing and shows on the surface."""
     zs = np.arange(H / 2, ztop, H)
     zall = np.unique(np.concatenate([m.vertices[:, 2] for m in meshes]))
-    return zs, [unary_union([g for m in meshes for dz in (-0.013, 0.011) for g in [sec(m, safe_z(zall, z + dz))] if g is not None and not g.is_empty]).buffer(0) for z in zs]
+    out = []
+    for z in zs:
+        a, b = [unary_union([g for m in meshes for g in [sec(m, safe_z(zall, z + dz))] if g is not None and not g.is_empty]).buffer(0) for dz in (-0.013, 0.011)]
+        out.append(a.intersection(b).buffer(0) if agree else a.union(b).buffer(0))
+    return zs, out
 
 def clean(g, a=0.05):
     g = g.buffer(-0.03).buffer(0.03); gs = list(g.geoms) if hasattr(g, 'geoms') else [g]
@@ -218,6 +227,7 @@ for oid, tr in items:
         tot = sum(u.area for u in over)
         res = dict(before_mm2=round(tot, 2), fill=None)
         if tot > 0.5:
+            _, L = layers_of(meshes, ztop, agree=True)
             F = [None] * len(zs); F[-1] = L[-1]
             for k in range(len(zs) - 2, -1, -1): F[k] = L[k].union(F[k + 1].buffer(-REACH)).buffer(0)
             fill = [clean(F[k].difference(L[k]).buffer(0.02).intersection(F[k])) if k else Polygon() for k in range(len(zs))]
