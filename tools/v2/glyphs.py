@@ -440,3 +440,132 @@ def winding_road(n, seg, width, angle=30):
 def road_piece():
     """Silhouette of the physical road piece (Building Costs shows the pieces you build as silhouettes)."""
     return rr(-4.6, -1.35, 4.6, 1.35, 0.5)
+
+# ---------------------------------------------------------------- v2d
+def ore_v6(f=0.80):
+    """Two clean peaks with ridge lines; each ridge has its own, different kink."""
+    big = affinity.scale(Polygon([(-6.0, -10.0), (16.0, -10.0), (5.0, 13.5)]), f, f, origin=(0, 0))
+    small = affinity.scale(Polygon([(-16.0, -10.0), (-1.5, -10.0), (-8.75, 4.0)]), f, f, origin=(0, 0)).difference(big.buffer(GAP * 1.2))
+    soft = lambda p, r: p.buffer(-r, join_style=1).buffer(r, quad_segs=8)
+    big, small = soft(big, 0.5), soft(small, 0.4)
+    ridge_b = LineString([(5.0 * f, 12.4 * f), (5.7 * f, 3.2 * f), (7.3 * f, 1.0 * f), (7.9 * f, -10.6 * f)]).buffer(0.42, cap_style=2, join_style=2)
+    ridge_s = LineString([(-8.75 * f, 3.0 * f), (-9.4 * f, -5.6 * f), (-8.5 * f, -6.6 * f), (-8.6 * f, -10.6 * f)]).buffer(0.38, cap_style=2, join_style=2)
+    g = printable(unary_union([big.difference(ridge_b), small.difference(ridge_s)]), w=0.6, speck=1.0)
+    c = g.centroid
+    return affinity.translate(g, -c.x, -(g.bounds[1] + g.bounds[3]) / 2)
+
+def ore6_final():
+    z = safe_zone()
+    for f in np.arange(0.9, 0.6, -0.01):
+        g = ore_v6(f)
+        if z.contains(g) and closest(g) >= GAP - 0.01: return g, f
+
+def cobbles_along(pts, width, rows=2, stone_len=None):
+    """Cobblestone road along a polyline: rounded stones laid in staggered rows, every stone >= 0.7 mm from the next."""
+    line = LineString(pts); L = line.length
+    sw = (width - GAP * (rows - 1)) / rows                     # stone width across the road
+    sl = stone_len or sw * 1.45                                 # stone length along the road
+    placed = []
+    for r in range(rows):
+        off = -width / 2 + sw / 2 + r * (sw + GAP)
+        s = sl / 2 + (0 if r % 2 == 0 else (sl + GAP) / 2)
+        while s <= L - sl / 2 + 1e-6:
+            p = line.interpolate(s); q = line.interpolate(min(L, s + 0.01)); p0 = line.interpolate(max(0, s - 0.01))
+            dx, dy = q.x - p0.x, q.y - p0.y; n = np.hypot(dx, dy); ux, uy = dx / n, dy / n
+            c = (p.x - uy * off, p.y + ux * off)
+            st = affinity.rotate(rr(-sl / 2, -sw / 2, sl / 2, sw / 2, min(sw, sl) * 0.32), np.degrees(np.arctan2(uy, ux)), origin=(0, 0))
+            st = affinity.translate(st, *c)
+            if all(st.distance(o) >= GAP for o in placed): placed.append(st)
+            s += sl + GAP
+        # the staggered row also gets a half stone at its start so the road edge is filled
+        if r % 2 == 1:
+            p = line.interpolate(sl * 0.3); q = line.interpolate(sl * 0.3 + 0.01); p0 = line.interpolate(max(0, sl * 0.3 - 0.01))
+            dx, dy = q.x - p0.x, q.y - p0.y; n = np.hypot(dx, dy); ux, uy = dx / n, dy / n
+            st = affinity.translate(affinity.rotate(rr(-sl * 0.3, -sw / 2, sl * 0.3, sw / 2, min(sw, sl) * 0.32), np.degrees(np.arctan2(uy, ux)), origin=(0, 0)), p.x - uy * off, p.y + ux * off)
+            if all(st.distance(o) >= GAP for o in placed): placed.append(st)
+    return unary_union(placed)
+
+def cobble_road(length, width, rows=2):
+    return cobbles_along([(-length / 2, 0), (length / 2, 0)], width, rows)
+
+def cobble_winding(n, seg, width, angle=30, rows=2):
+    pts = [(0.0, 0.0)]
+    for k in range(n):
+        a = angle if k % 2 == 0 else -angle
+        x, y = pts[-1]; pts.append((x + seg * np.cos(np.radians(a)), y + seg * np.sin(np.radians(a))))
+    return centre(cobbles_along(pts, width, rows))
+
+def road_hammer_cobbles():
+    r = affinity.rotate(cobble_road(27.0, 6.4, rows=3), 45, origin=(0, 0))
+    hm = affinity.rotate(hammer2(24.0, 3.2), 45, origin=(0, 0))
+    r = unary_union([p for p in pieces(r.difference(hm.buffer(GAP, join_style=1))) if p.area > 0.8])
+    return centre(printable(unary_union([r, hm]), w=0.6, speck=1.0))
+
+def coin_stack_outline(lw):
+    """Coins in line style for the Building Costs back: a tall stack, a short stack beside it and one coin leaning on it.
+    Each coin seen edge-on is a bar one line wide; the top coins show their faces as ovals."""
+    cw, ch, gp = 10.0, lw, 0.85
+    parts = []
+    def stack(cx, n, w):
+        y = -8.0
+        for k in range(n):
+            parts.append(rr(cx - w / 2, y, cx + w / 2, y + ch, ch * 0.45)); y += ch + gp
+        top = affinity.translate(affinity.scale(Point(0, 0).buffer(1, quad_segs=32), w / 2, w * 0.2), cx, y + w * 0.2 - 0.2)
+        parts.append(top.difference(top.buffer(-lw * 0.85)))
+    stack(-2.2, 5, cw)
+    stack(6.0, 2, cw * 0.78)
+    lean = affinity.scale(Point(0, 0).buffer(1, quad_segs=32), 4.0, 1.7)
+    lean = affinity.translate(affinity.rotate(lean.difference(lean.buffer(-lw * 0.85)), 62, origin=(0, 0)), -10.6, -4.2)
+    parts.append(lean)
+    g = unary_union(parts)
+    return centre(printable(g, w=0.6, speck=0.5))
+
+def cobbled_path(pts, width, stone=None):
+    """Cobbled road: one solid path (keeps its shape) with black joint lines marking two staggered rows of stones."""
+    line = LineString(pts); L = line.length
+    body = line.buffer(width / 2, cap_style=2, join_style=2, mitre_limit=4)
+    body = body.buffer(0.4, join_style=1).buffer(-0.4, join_style=1)
+    sl = stone or width * 0.62
+    joints = [line.buffer(GAP / 2, cap_style=2)]                     # centre joint between the two rows
+    bends = [line.project(Point(p)) for p in pts[1:-1]]
+    for side, start in ((1, sl * 0.5), (-1, sl)):
+        s = start
+        while s < L - sl * 0.45:
+            if all(abs(s - b) > width * 0.45 for b in bends):
+                p = line.interpolate(s); q = line.interpolate(min(L, s + 0.01)); p0 = line.interpolate(max(0, s - 0.01))
+                dx, dy = q.x - p0.x, q.y - p0.y; n = np.hypot(dx, dy); nx, ny = -dy / n, dx / n
+                joints.append(LineString([(p.x, p.y), (p.x + side * nx * width, p.y + side * ny * width)]).buffer(GAP / 2, cap_style=2))
+            s += sl
+    g = body.difference(unary_union(joints))
+    return printable(g, w=0.6, speck=0.8)
+
+def cobbled_winding(n, seg, width, angle=30):
+    pts = [(0.0, 0.0)]
+    for k in range(n):
+        a = angle if k % 2 == 0 else -angle
+        x, y = pts[-1]; pts.append((x + seg * np.cos(np.radians(a)), y + seg * np.sin(np.radians(a))))
+    return centre(cobbled_path(pts, width))
+
+def road_hammer_cobbled():
+    r = affinity.rotate(cobbled_path([(-13.5, 0), (13.5, 0)], 6.6), 45, origin=(0, 0))
+    hm = affinity.rotate(hammer2(24.0, 3.2), 45, origin=(0, 0))
+    r = r.difference(hm.buffer(GAP, join_style=1))
+    return centre(printable(unary_union([r, hm]), w=0.6, speck=1.0))
+
+def coin_stacks_outline(lw):
+    """Line-style coins for the Building Costs back: a tall stack and a shorter one beside it, each coin edge-on as a bar,
+    the top of each stack showing the round coin face."""
+    ch, gp = lw, 0.85
+    parts = []
+    def stack(cx, base, n, w):
+        y = base
+        for k in range(n):
+            parts.append(rr(cx - w / 2, y, cx + w / 2, y + ch, ch * 0.48)); y += ch + gp
+        ry = w * 0.26
+        face = affinity.translate(affinity.scale(Point(0, 0).buffer(1, quad_segs=40), w / 2, ry), cx, y + ry - 0.15)
+        parts.append(face.difference(face.buffer(-lw * 0.85)))
+        return y + 2 * ry
+    stack(-3.8, -8.0, 5, 9.6)
+    stack(6.4, -8.0, 3, 7.8)
+    g = unary_union(parts)
+    return centre(printable(g, w=0.6, speck=0.5))

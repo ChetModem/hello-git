@@ -28,8 +28,8 @@ V1_DEV_BACK = pickle.load(open(os.path.join(SPD, 'dev_shapes.pkl'), 'rb'))['knig
 def back_resource(): return RES_LOGO
 def back_dev_v1(): return V1_DEV_BACK
 def back_costs_v1():
-    """Building Costs back: the hex ring with a coin purse outline inside (same family as the trophy back)."""
-    return unary_union([RES_LOGO, G.bag_outline2(17.0, LW)]).buffer(0)
+    """Building Costs back: the hex ring with two coin stacks inside (same family as the trophy back)."""
+    return unary_union([RES_LOGO, G.coin_stacks_outline(LW)]).buffer(0)
 def back_trophy_v1():
     """The original Longest Road / Largest Army back (hex ring + trophy outline), traced from the v2 trophy."""
     t = G.trophy(17.5)
@@ -90,7 +90,7 @@ def knight():
 def victory_point():
     g, k = G.fill_zone(G.trophy(25.1)); return {ORANGE: g}, ORANGE
 def road_building():
-    z, k = G.fill_zone(G.road_hammer_with(G.road_edges(26.0, 7.4))); return {WHITE: z}, GREEN
+    z, k = G.fill_zone(G.road_hammer_cobbled()); return {WHITE: z}, GREEN
 def year_of_plenty():
     f = fanned_cards([None, None], w=11.0, h=15.4, spread=14.0, dx=6.4)
     allg = unary_union(list(f.values())); b = allg.bounds
@@ -118,7 +118,7 @@ def trophies():
     w = t.bounds[2] - t.bounds[0]
     return unary_union([place(t, -(w / 2 + 1.6), TROPHY_Y), place(t, w / 2 + 1.6, TROPHY_Y)])
 def longest_road():
-    chain = G.winding_road(5, 8.6, 5.6)
+    chain = G.cobbled_winding(5, 8.6, 6.0)
     return {WHITE: place(chain, 0, 6.0), ORANGE: trophies()}, ORANGE
 def largest_army():
     big = G.helmet(22.0); small = G.helmet(15.5); base = -6.0; gap = 1.4
@@ -150,7 +150,7 @@ def wheat_card(option):
     else: g = centre(G.wheat_v2(0.67, 3))
     return {WHEAT: g}, WHEAT
 def ore_card():
-    g, f = G.ore5_final(); return {ORE: g}, ORE
+    g, f = G.ore6_final(); return {ORE: g}, ORE
 
 CARDS = {
     'Knight': (knight, back_dev_v1), 'Victory Point': (victory_point, back_dev_v1), 'Road Building': (road_building, back_dev_v1),
