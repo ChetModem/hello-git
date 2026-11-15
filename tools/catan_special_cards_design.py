@@ -180,7 +180,7 @@ def printable(g, w=0.6, speck=2.0):
 # ---------------------------------------------------------------- cards: {colour slot: shape}
 RES = {'brick': (3, m_brick), 'wood': (4, m_wood), 'wheat': (5, m_wheat), 'sheep': (2, m_sheep), 'ore': (6, m_ore)}
 
-HEX_W = 8.2      # resource hexagon width on the Building Costs card (mm), same pointy-top shape as the corner hexes
+HEX_W = 6.5      # resource hexagon width on the Building Costs card (mm), same pointy-top shape as the corner hexes
 NUM_CAP = 4.6    # count number cut into the hexagon in black
 RES_SLOT = {'brick': 3, 'wood': 4, 'wheat': 5, 'sheep': 2, 'ore': 6}
 
@@ -193,10 +193,10 @@ def res_hex(n=1, w=HEX_W):
     return h
 
 def building_costs():
-    """No corner hexes on this card: one row per thing you can buy, its cost as resource-coloured hexagons."""
+    """No corner hexes on this card: one row per thing you can buy, one resource-coloured hexagon per card it costs."""
     rows = [(p_road, [('brick', 1), ('wood', 1)]),
             (p_settlement, [('brick', 1), ('wood', 1), ('wheat', 1), ('sheep', 1)]),
-            (p_city, [('ore', 3), ('wheat', 2)]),
+            (p_city, [('ore', 1), ('ore', 1), ('ore', 1), ('wheat', 1), ('wheat', 1)]),
             (p_devcard, [('ore', 1), ('wheat', 1), ('sheep', 1)])]
     out = {2: [], 3: [], 4: [], 5: [], 6: []}
     for i, (piece, res) in enumerate(rows):
@@ -205,8 +205,8 @@ def building_costs():
         out[2].append(place(pc, -18.6 - (b[0] + b[2]) / 2, y - (b[1] + b[3]) / 2))
         x = -13.0
         for r, n in res:
-            out[RES_SLOT[r]].append(place(res_hex(n), x + HEX_W / 2, y)); x += HEX_W + 1.2
-        assert x - 1.2 <= 23.6, f'row {i} too wide: ends at {x - 1.2:.1f}'
+            out[RES_SLOT[r]].append(place(res_hex(n), x + HEX_W / 2, y)); x += HEX_W + 1.0
+        assert x - 1.0 <= 23.6, f'row {i} too wide: ends at {x - 1.0:.1f}'
     return {k: printable(unary_union(v), speck=0.5) for k, v in out.items() if v}
 
 def trophies(y, h=9.5):
