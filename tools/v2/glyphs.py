@@ -726,3 +726,113 @@ def at_final(fn):
     for s_ in np.arange(1.6, 0.5, -0.01):
         g = fn(s_)
         if z.contains(g) and closest(g) >= GAP - 0.01: return g, s_
+
+# ---------------------------------------------------------------- resource set studies
+def log_ends(s=1.0):
+    """Flat front view of a log pile: 3-2-1 log ends, each with a black growth ring."""
+    r = 3.0 * s; d = 2 * r + GAP; parts = []
+    for row, n in enumerate((3, 2, 1)):
+        for i in range(n):
+            x = (i - (n - 1) / 2) * d; y = row * d * np.sqrt(3) / 2
+            c = Point(x, y).buffer(r, quad_segs=48)
+            ring = Point(x + r * 0.08, y + r * 0.05).buffer(r * 0.52, quad_segs=32)
+            parts.append(c.difference(ring.difference(ring.buffer(-GAP))))
+    return centre(unary_union(parts))
+
+def wool_ball(s=1.0):
+    """Ball of wool (3D): a sphere wrapped with yarn, black lines for the strands, a loose end trailing off."""
+    R = 10.0 * s
+    ball = Point(0, 0).buffer(R, quad_segs=64)
+    strands = []
+    for a, off, rx in ((25, -3.6, 1.0), (25, 0.6, 1.0), (25, 4.8, 0.9), (-55, -2.0, 0.95), (-55, 2.8, 0.9)):
+        e = affinity.scale(Point(0, 0).buffer(1, quad_segs=64), R * rx, R * 0.42)
+        arc = e.exterior.buffer(GAP / 2)
+        strands.append(affinity.rotate(affinity.translate(arc, 0, off * s), a, origin=(0, 0)))
+    yarn = unary_union(strands).intersection(ball.buffer(-1.2))
+    tail = LineString([(R * 0.62, -R * 0.75), (R * 1.0, -R * 1.05), (R * 1.35, -R * 0.95)]).buffer(0.55 * s + 0.15, cap_style=1, join_style=1)
+    tail = tail.difference(ball.buffer(GAP))
+    return centre(printable(unary_union([ball.difference(yarn), tail]), w=0.6, speck=0.8))
+
+def sheaf(s=1.0):
+    """Wheat sheaf: three ears fanned out, their stalks tied with a band and spreading below it."""
+    ears = []
+    for ang, dx in ((-22, -1.2), (0, 0.0), (22, 1.2)):
+        parts, w = I.ear(0.0, (13.0, 10.2), 1.5, 3, 9.6, 6.3, 0.7, 3.7, 2.9, gap=GAP)
+        ear = unary_union(parts)
+        ear = affinity.rotate(ear, ang, origin=(0, -2.0))
+        ears.append(affinity.translate(ear, dx, 0))
+    ears = unary_union(ears)
+    band_y = -4.6
+    stalks = unary_union([LineString([(0, -0.6), (x, -14.0)]).buffer(0.55, cap_style=2) for x in (-4.2, -2.1, 0, 2.1, 4.2)])
+    stalks = stalks.difference(box(-6, band_y - 1.4, 6, band_y + 1.4).buffer(GAP))
+    band = rr(-3.4, band_y - 1.2, 3.4, band_y + 1.2, 0.5)
+    stalks = stalks.difference(ears.buffer(GAP))
+    g = unary_union([ears, band, stalks]).buffer(0)
+    return centre(affinity.scale(printable(g, w=0.6, speck=0.5), s, s, origin=(0, 0)))
+
+def wool_ball2(s=1.0):
+    """Ball of wool: curved parallel wraps from two directions (arcs of large circles centred off the ball)."""
+    R = 10.0 * s; ball = Point(0, 0).buffer(R, quad_segs=64)
+    lines = []
+    for (cx, cy), radii in (((-17.0 * s, 9.0 * s), [13.5, 16.3, 19.1, 21.9]), ((15.0 * s, 12.0 * s), [12.0, 14.8, 17.6])):
+        for r in radii:
+            lines.append(Point(cx, cy).buffer(r * s, quad_segs=96).exterior.buffer(GAP / 2))
+    g1 = unary_union(lines[:4]).intersection(ball.buffer(-1.0)).intersection(Point(-2.5 * s, -1.0 * s).buffer(R * 1.1))
+    g2 = unary_union(lines[4:]).intersection(ball.buffer(-1.0)).difference(Point(-17.0 * s, 9.0 * s).buffer(18.0 * s))
+    yarn = unary_union([g1, g2])
+    tail = LineString([(R * 0.55, -R * 0.84), (R * 0.95, -R * 1.12), (R * 1.35, -R * 1.0)]).buffer(0.6 * s + 0.1, cap_style=1, join_style=1).difference(ball.buffer(GAP))
+    return centre(printable(unary_union([ball.difference(yarn), tail]), w=0.6, speck=0.8))
+
+def teardrop_ear(h, w, cuts):
+    """A solid ear of wheat (pointed teardrop) with a few V-cuts marking the grains, kept to the upper part."""
+    pts = []
+    for t in np.linspace(0, np.pi, 40):
+        y = h / 2 * np.cos(t); x = w / 2 * np.sin(t) * (0.55 + 0.45 * (1 - (y / (h / 2) + 1) / 2)) if False else w / 2 * np.sin(t) ** 1.25
+        pts.append((x, y))
+    right = pts; ear = Polygon(right + [(-x, y) for x, y in reversed(right)]).buffer(0)
+    vs = []
+    for i in range(cuts):
+        ya = h / 2 - h * 0.30 - i * (h * 0.55 / max(1, cuts - 1) if cuts > 1 else 0)
+        dx = w; dy = dx * 0.75
+        vs.append(LineString([(-dx, ya + dy), (0, ya), (dx, ya + dy)]).buffer(GAP / 2, join_style=2))
+    return ear.difference(unary_union(vs))
+
+def sheaf2(s=1.0):
+    ears = []
+    for ang, dx, hh in ((-20, -1.4, 11.5), (0, 0.0, 13.0), (20, 1.4, 11.5)):
+        e = teardrop_ear(hh, 5.2, 3)
+        e = affinity.translate(e, 0, 4.0 + hh / 2)
+        ears.append(affinity.translate(affinity.rotate(e, ang, origin=(0, 0)), dx, 0))
+    ears_u = unary_union(ears)
+    band_y = -1.6
+    band = rr(-3.6, band_y - 1.2, 3.6, band_y + 1.2, 0.5)
+    top_y = band_y - 1.2 - GAP; bot_y = -13.0
+    fan = Polygon([(-3.2, top_y), (3.2, top_y), (5.6, bot_y), (-5.6, bot_y)]).buffer(0.3, join_style=1).buffer(-0.3, join_style=1)
+    splits = unary_union([LineString([(x * 0.55, top_y + 1), (x, bot_y - 1)]).buffer(GAP / 2, cap_style=2) for x in (-3.4, -1.15, 1.15, 3.4)])
+    stalks = fan.difference(splits)
+    neck = Polygon([(-1.6, band_y + 1.2 + GAP), (1.6, band_y + 1.2 + GAP), (0.9, 3.4), (-0.9, 3.4)]).difference(ears_u.buffer(GAP))
+    stalks = unary_union([stalks, neck])
+    # ears touching each other: keep them apart
+    e0, e1, e2 = ears
+    e0 = e0.difference(e1.buffer(GAP)); e2 = e2.difference(e1.buffer(GAP))
+    g = unary_union([e0, e1, e2, band, stalks]).buffer(0)
+    return centre(affinity.scale(printable(g, w=0.6, speck=0.5), s, s, origin=(0, 0)))
+
+def sheaf3(s=1.0):
+    """Sheaf drawn at final size: shapes scale with s, gaps stay 0.7 mm."""
+    ears = []
+    for ang, dx, hh in ((-20, -1.4, 11.5), (0, 0.0, 13.0), (20, 1.4, 11.5)):
+        e = teardrop_ear(hh * s, 5.2 * s, 3)
+        e = affinity.translate(e, 0, 4.0 * s + hh * s / 2)
+        ears.append(affinity.translate(affinity.rotate(e, ang, origin=(0, 0)), dx * s, 0))
+    e0, e1, e2 = ears
+    e0 = e0.difference(e1.buffer(GAP)); e2 = e2.difference(e1.buffer(GAP))
+    ears_u = unary_union([e0, e1, e2])
+    band_y = -1.6 * s
+    band = rr(-3.6 * s, band_y - 1.2 * s, 3.6 * s, band_y + 1.2 * s, 0.5)
+    top_y = band_y - 1.2 * s - GAP; bot_y = -13.0 * s
+    fan = Polygon([(-3.2 * s, top_y), (3.2 * s, top_y), (5.6 * s, bot_y), (-5.6 * s, bot_y)]).buffer(0.3, join_style=1).buffer(-0.3, join_style=1)
+    splits = unary_union([LineString([(x * 0.55 * s, top_y + 1), (x * s, bot_y - 1)]).buffer(GAP / 2, cap_style=2) for x in (-3.4, -1.15, 1.15, 3.4)])
+    neck = Polygon([(-1.6 * s, band_y + 1.2 * s + GAP), (1.6 * s, band_y + 1.2 * s + GAP), (0.9 * s, 3.4 * s), (-0.9 * s, 3.4 * s)]).difference(ears_u.buffer(GAP))
+    g = unary_union([ears_u, band, fan.difference(splits), neck]).buffer(0)
+    return centre(printable(g, w=0.6, speck=0.5))

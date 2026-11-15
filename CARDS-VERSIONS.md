@@ -22,10 +22,11 @@ Preview: `catan-cards-v2-preview.png`. Code: `tools/v2/`.
 - Roads drawn as cobbled paths (black joints mark two staggered rows of stones, joints run through every bend):
   Road Building (crossed with a hammer) and Longest Road (one path along 5 hex edges, same road width and stone size).
   Building Costs shows the road *piece* as a silhouette.
-- Building Costs: each piece centred with its cost centred underneath.
+- Building Costs: rows (piece on the left, one hexagon per resource card) - the centred-blocks layout was tried and dropped.
 - Year of Plenty and Monopoly use the same card size; Monopoly's crown rests on a fan of 3 cards.
 - Victory Point trophy: open handles, solid black star. Small trophies (Longest Road, Largest Army): 12.5 mm.
-- Options still to choose: Ore (mountains / rocks / 3D ingots), Wheat (v1 / one large ear), Brick (v1 / 3D like wood).
+- Resource icons: choosing between whole sets (`catan-resource-sets-compare.png`): Set 1 current mixed styles,
+  Set 2 flat straight-on view, Set 3 3D three-quarter view built like the wood.
 - One card drawing everywhere (white card, black hexagon outline = a resource back with the colours swapped):
   Year of Plenty, Monopoly, Building Costs dev-card piece.
 - Monopoly: crown over 3 cards. Road Building, Year of Plenty, Monopoly: white icons, green only in the corners.

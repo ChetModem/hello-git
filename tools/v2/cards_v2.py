@@ -134,23 +134,21 @@ def largest_army():
     h = unary_union([place(big, 0, base - big.bounds[1])] + [place(small, sd * (wb / 2 + gap + ws / 2), base - small.bounds[1]) for sd in (-1, 1)])
     return {PURPLE: h, ORANGE: trophies()}, ORANGE
 def building_costs():
-    """Each piece centred, its cost centred underneath: four blocks down the card (balanced, no corner hexes)."""
+    """Rows: piece on the left, one hexagon per resource card it costs (the layout you preferred)."""
     rows = [('road', ['brick', 'wood']), ('settlement', ['brick', 'wood', 'wheat', 'sheep']),
             ('city', ['ore', 'ore', 'ore', 'wheat', 'wheat']), ('dev', ['ore', 'wheat', 'sheep'])]
     slot = {'brick': BRICK, 'wood': WOOD, 'wheat': WHEAT, 'sheep': WHITE, 'ore': ORE}
-    piece = {'road': G.road_piece(),
-             'settlement': affinity.scale(V1.p_settlement(), 1.15, 1.15, origin=(0, 0)),
-             'city': affinity.scale(V1.p_city(), 1.15, 1.15, origin=(0, 0)),
-             'dev': G.card(5.2, 7.2, False)[0]}
-    HW, step, out = 6.6, 7.6, {}
-    hexg = V1.hexagon(0, 0, HW).buffer(0.25, join_style=1).buffer(-0.25, join_style=1)
-    ys = [27.5, 9.5, -8.5, -26.5]
-    for (p, res), y in zip(rows, ys):
-        g = piece[p]; b = g.bounds
-        out = merge(out, {WHITE: place(g, -(b[0] + b[2]) / 2, y + 4.2 - (b[1] + b[3]) / 2)})
-        n = len(res); x0 = -(n - 1) * step / 2
-        for i, r in enumerate(res):
-            out = merge(out, {slot[r]: place(hexg, x0 + i * step, y - 4.3)})
+    piece = {'road': affinity.rotate(G.road_piece(), 30, origin=(0, 0)),
+             'settlement': affinity.scale(V1.p_settlement(), 1.25, 1.25, origin=(0, 0)),
+             'city': affinity.scale(V1.p_city(), 1.25, 1.25, origin=(0, 0)),
+             'dev': G.card(6.0, 8.4, False)[0]}
+    out = {}
+    for i, (p, res) in enumerate(rows):
+        y = 21.0 - i * 14.0
+        g = piece[p]; b = g.bounds; out = merge(out, {WHITE: place(g, -18.6 - (b[0] + b[2]) / 2, y - (b[1] + b[3]) / 2)})
+        x = -13.0
+        for r in res:
+            out = merge(out, {slot[r]: place(V1.hexagon(0, 0, 6.5).buffer(0.25, join_style=1).buffer(-0.25, join_style=1), x + 3.25, y)}); x += 7.5
     return out, None
 
 # ---------------------------------------------------------------- resource cards (v2 options for wheat and ore)
