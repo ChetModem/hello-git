@@ -995,3 +995,52 @@ def stump(s=1.0, axe=False):
         axe_g = unary_union([head, handle])
         parts = [p.difference(axe_g.buffer(GAP, join_style=1)) for p in parts] + [axe_g]
     return centre(printable(unary_union(parts), w=0.6, speck=0.8))
+
+# ---------------------------------------------------------------- upright log variations
+def _ellipse(cx, cy, rx, ry): return affinity.translate(affinity.scale(Point(0, 0).buffer(1, quad_segs=64), rx, ry), cx, cy)
+
+def log_up(H, R, top='flat', stub=True, grain=2, knots=0, rings=2):
+    """One upright log: body, cut top (flat ellipse or slanted), growth rings, bark lines, optional branch stub / knots."""
+    ry = R * 0.52
+    if top == 'flat':
+        cap = _ellipse(0, H / 2 - ry, R, ry); body = rr(-R, -H / 2, R, H / 2 - ry, R * 0.35).union(_ellipse(0, -H / 2 + 0.01, R, 0.01))
+    else:                                               # slanted cut, higher on the left
+        cap = affinity.rotate(_ellipse(0, H / 2 - ry - R * 0.35, R * 1.04, ry), 18, origin=(0, H / 2 - ry - R * 0.35))
+        body = Polygon([(-R, -H / 2), (R, -H / 2), (R, H / 2 - ry - R * 0.7), (-R, H / 2 - ry)]).buffer(0.4, join_style=1).buffer(-0.4, join_style=1)
+    body = body.difference(cap.buffer(GAP))
+    cap0 = cap; c = cap0.centroid
+    for k in ((0.50,) if rings else ()):                   # one clear growth ring
+        e = affinity.scale(cap0, k, k, origin=(c.x, c.y)); cap = cap.difference(e.exterior.buffer(GAP / 2))
+    lines = []
+    for i in range(grain):
+        x = (-0.4 + 0.8 * i / max(1, grain - 1)) * R if grain > 1 else 0.0
+        y_top = cap.bounds[1] - 1.6; lines.append(LineString([(x, y_top), (x * 1.02, -H / 2 + 2.4)]).buffer(GAP / 2, cap_style=1))
+    for i in range(knots):
+        kx, ky = (R * 0.35, -H * 0.12) if i == 0 else (-R * 0.4, H * 0.08)
+        lines.append(_ellipse(kx, ky, R * 0.24, R * 0.36).exterior.buffer(GAP / 2))
+    body = body.difference(unary_union(lines)) if lines else body
+    parts = [body, cap]
+    if stub:
+        y = -H * 0.05
+        st = Polygon([(R - 0.6, y - 1.2), (R - 0.6, y + 1.4), (R + 3.4, y + 3.6), (R + 3.8, y + 1.8)]).buffer(0.3, join_style=1).buffer(-0.3, join_style=1)
+        parts.append(st)
+    return unary_union(parts)
+
+def log_up_a(s=1.0): return centre(printable(log_up(31 * s, 5.4 * s, 'flat', True, 2, 0), w=0.6, speck=0.8))
+def log_up_b(s=1.0): return centre(printable(log_up(31 * s, 5.4 * s, 'slant', True, 2, 0), w=0.6, speck=0.8))
+def log_up_c(s=1.0): return centre(printable(log_up(31 * s, 5.4 * s, 'flat', False, 0, 2), w=0.6, speck=0.8))
+def log_up_d(s=1.0): return centre(printable(log_up(31 * s, 5.4 * s, 'flat', False, 3, 0), w=0.6, speck=0.8))
+
+def log_bundle(s=1.0, n=3, tie=True):
+    """Upright logs side by side at slightly different heights, optionally tied with a band (like a sheaf)."""
+    R = 3.7 * s; hs = (24.0, 28.0, 25.5) if n == 3 else (27.0, 31.0)
+    xs = [(i - (n - 1) / 2) * (2 * R + GAP) for i in range(n)]
+    logs = [place(log_up(h * s, R, 'flat', False, 1, 0, rings=0), x, (h * s - 28.0 * s) / 2) for x, h in zip(xs, hs)]   # thin logs: plain tops (a ring would break up)
+    g = unary_union(logs)
+    if tie:
+        band_y = -4.0 * s
+        band = rr(xs[0] - R - 0.8, band_y - 1.3 * s, xs[-1] + R + 0.8, band_y + 1.3 * s, 0.5)
+        g = unary_union([g.difference(band.buffer(GAP)), band])
+    return centre(printable(g, w=0.6, speck=0.8))
+def log_bundle_tied(s=1.0): return log_bundle(s, 3, True)
+def log_pair(s=1.0): return log_bundle(s, 2, False)
