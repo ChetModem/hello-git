@@ -291,3 +291,152 @@ def road_and_hammer2():
     hm = affinity.rotate(hammer2(24.0, 3.2), 45, origin=(0, 0))      # hammer handle along \ (head top-left)
     r = r.difference(hm.buffer(GAP, join_style=1))
     return centre(printable(unary_union([r, hm]), w=0.6, speck=1.0))
+
+# ---------------------------------------------------------------- v2c
+def money_bag(height):
+    """Coin purse silhouette: round bag, cinched neck, a three-lobe ruffle on top."""
+    h = height; w = h * 0.78
+    body = affinity.scale(Point(0, 0).buffer(1, quad_segs=48), w / 2, h * 0.36)
+    body = affinity.translate(body, 0, -h * 0.5 + h * 0.36)
+    neck = Polygon([(-w * 0.20, h * 0.08), (w * 0.20, h * 0.08), (w * 0.13, h * 0.22), (-w * 0.13, h * 0.22)])
+    ruff = unary_union([Point(x, h * 0.30).buffer(w * 0.12, quad_segs=24) for x in (-w * 0.17, 0, w * 0.17)] +
+                       [Point(0, h * 0.36).buffer(w * 0.12, quad_segs=24)])
+    g = unary_union([body, neck, ruff]).buffer(0.6, join_style=1).buffer(-0.6, join_style=1)
+    return centre(g)
+
+def bag_outline(height, lw):
+    """Outline of the purse at line width lw, plus the tie across the neck."""
+    sil = money_bag(height)
+    hollow = sil.buffer(-lw, join_style=1)
+    body_hollow = max(pieces(hollow), key=lambda p: p.area)
+    b = sil.bounds; h = b[3] - b[1]
+    tie_y = b[1] + h * 0.70
+    tie = box(b[0], tie_y - lw / 2, b[2], tie_y + lw / 2).intersection(sil)
+    return unary_union([sil.difference(body_hollow), tie]).buffer(0)
+
+def ore_v5(f=0.80):
+    """Two clean peaks (v2 shapes) with a ridge line for depth; the ridge has a slight zag half-way down."""
+    big = affinity.scale(Polygon([(-6.0, -10.0), (16.0, -10.0), (5.0, 13.5)]), f, f, origin=(0, 0))
+    small = affinity.scale(Polygon([(-16.0, -10.0), (-1.5, -10.0), (-8.75, 4.0)]), f, f, origin=(0, 0)).difference(big.buffer(GAP * 1.2))
+    soft = lambda p, r: p.buffer(-r, join_style=1).buffer(r, quad_segs=8)
+    big, small = soft(big, 0.5), soft(small, 0.4)
+    ridge_b = LineString([(5.0 * f, 12.4 * f), (5.7 * f, 3.2 * f), (7.3 * f, 1.0 * f), (7.9 * f, -10.6 * f)]).buffer(0.42, cap_style=2, join_style=2)
+    ridge_s = LineString([(-8.75 * f, 3.2 * f), (-8.3 * f, -2.6 * f), (-7.4 * f, -3.8 * f), (-7.1 * f, -10.6 * f)]).buffer(0.38, cap_style=2, join_style=2)
+    g = printable(unary_union([big.difference(ridge_b), small.difference(ridge_s)]), w=0.6, speck=1.0)
+    c = g.centroid
+    return affinity.translate(g, -c.x, -(g.bounds[1] + g.bounds[3]) / 2)
+
+def ore5_final():
+    z = safe_zone()
+    for f in np.arange(0.9, 0.6, -0.01):
+        g = ore_v5(f)
+        if z.contains(g) and closest(g) >= GAP - 0.01: return g, f
+
+def road_edges(length, width):
+    """Road seen from above: white edge lines, black tarmac, white dashed centre line."""
+    e = max(0.9, width * 0.14); dw = max(0.8, width * 0.12)
+    outer = rr(-length / 2, -width / 2, length / 2, width / 2, 0.3)
+    tarmac = box(-length / 2 - 1, -width / 2 + e, length / 2 + 1, width / 2 - e)
+    dl, dg = width * 0.55, width * 0.45; n = max(1, int((length - 1.2 * dg + dg) // (dl + dg))); tot = n * dl + (n - 1) * dg; x0 = -tot / 2   # dashes stay clear of the ends
+    dashes = unary_union([box(x0 + k * (dl + dg), -dw / 2, x0 + k * (dl + dg) + dl, dw / 2) for k in range(n)])
+    return unary_union([outer.difference(tarmac), dashes.intersection(outer)])
+
+def road_perspective(length, w_near, w_far):
+    """Road running into the distance: a white trapezoid with black centre dashes that shrink with distance."""
+    body = Polygon([(-w_near / 2, -length / 2), (w_near / 2, -length / 2), (w_far / 2, length / 2), (-w_far / 2, length / 2)])
+    body = body.buffer(0.3, join_style=1).buffer(-0.3, join_style=1)
+    dashes = []; y = -length / 2 + length * 0.08
+    for k in range(4):
+        t = (y + length / 2) / length; wd = max(GAP, (w_near + (w_far - w_near) * t) * 0.14)
+        dl = max(1.2, (w_near + (w_far - w_near) * t) * 0.55)
+        dashes.append(box(-wd / 2, y, wd / 2, y + dl)); y += dl * 1.9
+    return body.difference(unary_union(dashes).intersection(body.buffer(-0.9)))
+
+def road_hammer_with(road_shape, angle_road=45):
+    r = affinity.rotate(road_shape, angle_road, origin=(0, 0))
+    hm = affinity.rotate(hammer2(24.0, 3.2), 45, origin=(0, 0))
+    r = r.difference(hm.buffer(GAP, join_style=1))
+    return centre(printable(unary_union([r, hm]), w=0.6, speck=1.0))
+
+def money_bag2(height):
+    """Coin purse: pear-shaped bag (wide bottom), pinched neck, a fuller ruffle on top."""
+    h = height; w = h * 0.86
+    base = affinity.translate(affinity.scale(Point(0, 0).buffer(1, quad_segs=48), w / 2, h * 0.30), 0, -h / 2 + h * 0.30)
+    shoulder = Polygon([(-w * 0.46, -h * 0.22), (w * 0.46, -h * 0.22), (w * 0.16, h * 0.14), (-w * 0.16, h * 0.14)])
+    neck = box(-w * 0.13, h * 0.10, w * 0.13, h * 0.22)
+    ruff = Polygon([(-w * 0.13, h * 0.20), (-w * 0.36, h * 0.40), (-w * 0.18, h * 0.36), (-w * 0.10, h * 0.48),
+                    (0, h * 0.38), (w * 0.10, h * 0.48), (w * 0.18, h * 0.36), (w * 0.36, h * 0.40), (w * 0.13, h * 0.20)])
+    g = unary_union([base, shoulder, neck, ruff]).buffer(0.9, join_style=1).buffer(-0.9, join_style=1)
+    return centre(g)
+
+def bag_outline2(height, lw):
+    sil = money_bag2(height); b = sil.bounds; h = b[3] - b[1]
+    hollow = sil.buffer(-lw, join_style=1)
+    body_hollow = max(pieces(hollow), key=lambda p: p.area)
+    out = sil.difference(body_hollow)
+    tie_y = b[1] + h * 0.655
+    tie = box(b[0] - 1, tie_y - lw / 2, b[2] + 1, tie_y + lw / 2).intersection(sil.buffer(0.01))
+    return printable(unary_union([out, tie]).buffer(0), w=0.6, speck=1.0)
+
+def road_chain_edges(n, seg, width, angle=30):
+    def build(L):
+        x = y = 0; parts = []
+        for k in range(n):
+            a = angle if k % 2 == 0 else -angle
+            c, s_ = np.cos(np.radians(a)), np.sin(np.radians(a))
+            parts.append(affinity.translate(affinity.rotate(road_edges(L, width), a, origin=(0, 0)), x + seg * c / 2, y + seg * s_ / 2))
+            x, y = x + seg * c, y + seg * s_
+        return parts
+    lo, hi = seg * 0.3, seg
+    for _ in range(30):
+        L = (lo + hi) / 2; ps = build(L)
+        d = min(unary_union(ps[i]).distance(unary_union(ps[i + 1])) for i in range(n - 1))
+        (lo, hi) = (L, hi) if d >= GAP + 0.02 else (lo, L)
+    return centre(unary_union(build(lo)))
+
+def road_tile(length, width):
+    """Small-size road: the same edge-line road but closed at both ends (an outlined segment with a centre dash)."""
+    e = max(0.9, width * 0.15)
+    outer = rr(-length / 2, -width / 2, length / 2, width / 2, min(0.8, width * 0.2))
+    inner = outer.buffer(-e, join_style=2)
+    dw = max(0.8, width * 0.14)
+    dash = box(-length * 0.22, -dw / 2, length * 0.22, dw / 2)
+    return unary_union([outer.difference(inner), dash.intersection(inner.buffer(-GAP))])
+
+def road_chain_tiles(n, seg, width, angle=30):
+    def build(L):
+        x = y = 0; parts = []
+        for k in range(n):
+            a = angle if k % 2 == 0 else -angle
+            c, s_ = np.cos(np.radians(a)), np.sin(np.radians(a))
+            parts.append(affinity.translate(affinity.rotate(road_tile(L, width), a, origin=(0, 0)), x + seg * c / 2, y + seg * s_ / 2))
+            x, y = x + seg * c, y + seg * s_
+        return parts
+    lo, hi = seg * 0.3, seg
+    for _ in range(30):
+        L = (lo + hi) / 2; ps = build(L)
+        d = min(ps[i].distance(ps[i + 1]) for i in range(n - 1))
+        (lo, hi) = (L, hi) if d >= GAP + 0.02 else (lo, L)
+    return centre(unary_union(build(lo)))
+
+def winding_road(n, seg, width, angle=30):
+    """One continuous road along n hex edges (zig-zag), drawn like road_edges: white edges, dashed centre line."""
+    pts = [(0.0, 0.0)]
+    for k in range(n):
+        a = angle if k % 2 == 0 else -angle
+        x, y = pts[-1]; pts.append((x + seg * np.cos(np.radians(a)), y + seg * np.sin(np.radians(a))))
+    line = LineString(pts)
+    e = max(0.9, width * 0.15); dw = max(0.8, width * 0.13)
+    body = line.buffer(width / 2, cap_style=2, join_style=2, mitre_limit=3)
+    tarmac = line.buffer(width / 2 - e, cap_style=2, join_style=2, mitre_limit=3).buffer(0)
+    tarmac = unary_union([tarmac, LineString([pts[0], pts[1]]).buffer(width / 2 - e, cap_style=2), LineString([pts[-2], pts[-1]]).buffer(width / 2 - e, cap_style=2)])
+    dashes = []
+    for (x0, y0), (x1, y1) in zip(pts[:-1], pts[1:]):
+        mx, my = (x0 + x1) / 2, (y0 + y1) / 2; ux, uy = (x1 - x0) / seg, (y1 - y0) / seg; dl = seg * 0.32
+        dashes.append(LineString([(mx - ux * dl / 2, my - uy * dl / 2), (mx + ux * dl / 2, my + uy * dl / 2)]).buffer(dw / 2, cap_style=2))
+    g = unary_union([body.difference(tarmac), unary_union(dashes)])
+    return centre(printable(g, w=0.6, speck=0.5))
+
+def road_piece():
+    """Silhouette of the physical road piece (Building Costs shows the pieces you build as silhouettes)."""
+    return rr(-4.6, -1.35, 4.6, 1.35, 0.5)

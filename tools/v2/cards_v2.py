@@ -27,7 +27,9 @@ def ring_around(inner_ring, gap):
 V1_DEV_BACK = pickle.load(open(os.path.join(SPD, 'dev_shapes.pkl'), 'rb'))['knight']['logo']
 def back_resource(): return RES_LOGO
 def back_dev_v1(): return V1_DEV_BACK
-def back_costs_v1(): return V1.special_back()
+def back_costs_v1():
+    """Building Costs back: the hex ring with a coin purse outline inside (same family as the trophy back)."""
+    return unary_union([RES_LOGO, G.bag_outline2(17.0, LW)]).buffer(0)
 def back_trophy_v1():
     """The original Longest Road / Largest Army back (hex ring + trophy outline), traced from the v2 trophy."""
     t = G.trophy(17.5)
@@ -88,7 +90,7 @@ def knight():
 def victory_point():
     g, k = G.fill_zone(G.trophy(25.1)); return {ORANGE: g}, ORANGE
 def road_building():
-    z, k = G.fill_zone(G.road_and_hammer2()); return {WHITE: z}, GREEN
+    z, k = G.fill_zone(G.road_hammer_with(G.road_edges(26.0, 7.4))); return {WHITE: z}, GREEN
 def year_of_plenty():
     f = fanned_cards([None, None], w=11.0, h=15.4, spread=14.0, dx=6.4)
     allg = unary_union(list(f.values())); b = allg.bounds
@@ -116,7 +118,7 @@ def trophies():
     w = t.bounds[2] - t.bounds[0]
     return unary_union([place(t, -(w / 2 + 1.6), TROPHY_Y), place(t, w / 2 + 1.6, TROPHY_Y)])
 def longest_road():
-    chain = G.road_chain(5, 9.0, 3.0)
+    chain = G.winding_road(5, 8.6, 5.6)
     return {WHITE: place(chain, 0, 6.0), ORANGE: trophies()}, ORANGE
 def largest_army():
     big = G.helmet(22.0); small = G.helmet(15.5); base = -6.0; gap = 1.4
@@ -127,7 +129,7 @@ def building_costs():
     rows = [('road', ['brick', 'wood']), ('settlement', ['brick', 'wood', 'wheat', 'sheep']),
             ('city', ['ore', 'ore', 'ore', 'wheat', 'wheat']), ('dev', ['ore', 'wheat', 'sheep'])]
     slot = {'brick': BRICK, 'wood': WOOD, 'wheat': WHEAT, 'sheep': WHITE, 'ore': ORE}
-    piece = {'road': affinity.rotate(G.road(9.0, 2.8), 30, origin=(0, 0)),
+    piece = {'road': affinity.rotate(G.road_piece(), 30, origin=(0, 0)),
              'settlement': affinity.scale(V1.p_settlement(), 1.25, 1.25, origin=(0, 0)),
              'city': affinity.scale(V1.p_city(), 1.25, 1.25, origin=(0, 0)),
              'dev': G.card(6.0, 8.4, False)[0]}
@@ -148,7 +150,7 @@ def wheat_card(option):
     else: g = centre(G.wheat_v2(0.67, 3))
     return {WHEAT: g}, WHEAT
 def ore_card():
-    g, f = G.ore4_final(); return {ORE: g}, ORE
+    g, f = G.ore5_final(); return {ORE: g}, ORE
 
 CARDS = {
     'Knight': (knight, back_dev_v1), 'Victory Point': (victory_point, back_dev_v1), 'Road Building': (road_building, back_dev_v1),

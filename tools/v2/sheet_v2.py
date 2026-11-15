@@ -13,7 +13,7 @@ for title, names in rows:
     for n in names:
         dr.text((x, y), n, fill=(90, 90, 90), font=F); out.paste(card_img(R[n][0]), (x, y + 30)); x += CW + 20
     y += CH + 56
-dr.text((10, y), 'Backs: the original designs (development and table cards move to 0.6 mm with a hidden black layer)', fill='black', font=F); y += 34; x = 10
+dr.text((10, y), 'Backs: original designs, Building Costs now with a coin purse (development and table cards at 0.6 mm, hidden black layer)', fill='black', font=F); y += 34; x = 10
 for n, b in [('resource', R['Ore'][1]), ('development', R['Knight'][1]), ('building costs', R['Building Costs'][1]), ('longest road / army', R['Longest Road'][1])]:
     dr.text((x, y), n, fill=(90, 90, 90), font=F); out.paste(back_img(b), (x, y + 30)); x += CW + 20
 out.save('v2_sheet.png'); print(out.size)
