@@ -1289,3 +1289,30 @@ def ore_rocks4(k=1.0):
     fb = unary_union([ln(p) for p in [[(-1.5, 9.0), (1.0, 1.0), (6.5, 7.5)], [(1.0, 1.0), (1.6, -8.8)], [(1.0, 1.0), (-7.7, 1.5)], [(1.0, 1.0), (11.2, -1.5)]]])
     fs = ln([(-12.6, 0.2), (-10.6, -4.6), (-10.2, -8.8)])
     return centre(soften(printable(unary_union([big.difference(fb), small.difference(fs)]), w=0.6, speck=1.0)))
+
+# ---------------------------------------------------------------- round 5
+def _cloud_sym(cx, cy, rx, ry, n, r):
+    """Fleece cloud mirrored left/right: one bump at the top, a valley at the bottom centre (odd n)."""
+    pts = [(cx + rx * np.cos(t), cy + ry * np.sin(t)) for t in np.pi / 2 + np.linspace(0, 2 * np.pi, n, endpoint=False)]
+    return unary_union([Point(x, y).buffer(r, quad_segs=32) for x, y in pts] + [affinity.translate(affinity.scale(Point(0, 0).buffer(1, quad_segs=48), rx, ry), cx, cy)])
+
+def sheep3(s=1.0, style='a'):
+    """sheep2 with a symmetrical fleece, so the cut around the chin is centred."""
+    body = _cloud_sym(0, 1.2 * s, 9.2 * s, 8.6 * s, 11, 3.2 * s).buffer(0.6, join_style=1).buffer(-0.6, join_style=1)
+    unit, head = sheep_head(s, style)
+    unit = affinity.translate(unit, 0, -0.6 * s)
+    body = body.difference(unit.buffer(LINE, join_style=1))
+    legs = unary_union([box(sd * 3.8 * s - 1.6 * s, -14.5 * s, sd * 3.8 * s + 1.6 * s, -8.6 * s) for sd in (-1, 1)])
+    legs = legs.difference(unary_union([body, unit]).buffer(LINE))
+    g = soften(printable(unary_union([body, unit, legs]), w=0.6, speck=0.6))
+    b = g.bounds; return affinity.translate(g, 0, -(b[1] + b[3]) / 2)       # keep x = 0 as the mirror line
+
+def ore_rocks5(k=1.0):
+    """ore_rocks4 with the small rock back to three faces, lines placed so the faces are about equal."""
+    S = lambda pts: [(x * k, y * k) for x, y in pts]
+    big = Polygon(S([(-5.5, -7.3), (1.6, -8.4), (8.6, -7.5), (11.0, -1.5), (6.5, 7.5), (-1.5, 9.0), (-7.5, 1.5)]))
+    small = Polygon(S([(-15.0, -7.4), (-11.0, -8.4), (-7.0, -7.7), (-6.4, -3.0), (-9.5, 1.8), (-14.2, -0.8)])).difference(big.buffer(LINE * 1.1))
+    ln = lambda p: LineString(S(p)).buffer(LINE / 2, cap_style=2, join_style=2)
+    fb = unary_union([ln(p) for p in [[(-1.5, 9.0), (1.0, 1.0), (6.5, 7.5)], [(1.0, 1.0), (1.6, -8.8)], [(1.0, 1.0), (-7.7, 1.5)], [(1.0, 1.0), (11.2, -1.5)]]])
+    fs = unary_union([ln([(-12.6, 0.2), (-11.4, -2.4), (-10.8, -8.9)]), ln([(-11.4, -2.4), (-6.6, -5.2)])])
+    return centre(soften(printable(unary_union([big.difference(fb), small.difference(fs)]), w=0.6, speck=1.0)))
