@@ -1222,3 +1222,70 @@ def fit_param(fn, lo=0.6, hi=1.6):
     for k in np.arange(hi, lo, -0.01):
         g = fn(k)
         if z.contains(g) and closest(g) >= 0.64: return g
+
+# ---------------------------------------------------------------- round 4: matched gaps, rounded tips, reworked sheep head
+LINE = 0.8                                  # one gap / facet width for the whole resource set
+def soften(g, r=0.3):
+    """Round the outside corners by r (opening), so every icon has the same tip shape."""
+    return unary_union([p.buffer(-r, join_style=2).buffer(r, quad_segs=8) for p in pieces(g)])
+
+def pine_tree2(s=1.0):
+    tiers = [Polygon([(-w / 2 * s, y0 * s), (w / 2 * s, y0 * s), (0, (y0 + h) * s)])
+             for w, y0, h in ((22.0, -6.0, 9.5), (17.0, 0.2, 8.5), (11.5, 5.6, 8.0))]
+    out = [t.difference(unary_union(tiers[i + 1:]).buffer(LINE, join_style=1)) if i < 2 else t for i, t in enumerate(tiers)]
+    trunk = box(-1.8 * s, -12.0 * s, 1.8 * s, -6.0 * s - LINE)
+    return centre(soften(unary_union(out + [trunk])))
+
+def wheat_angular2(k=1.0, rows=5, w=1.95):
+    """Angular ear, slightly larger grains, 0.8 mm gaps, shorter 2 mm stalk."""
+    parts = []; pitch = 3.15 * k; y0 = 6.0 * k
+    for i in range(rows):
+        y = y0 - i * pitch
+        for sd in (-1, 1):
+            parts.append(_grain((sd * (LINE / 2 + 0.25), y), (sd * 4.6 * k, y + 3.1 * k), w))
+    parts.append(_grain((0, y0 + 2.1 * k), (0, y0 + 2.1 * k + 5.4 * k), w))
+    ear = unary_union(parts)
+    ylow = y0 - (rows - 1) * pitch
+    stalk = box(-1.0, ylow - 4.2 * k, 1.0, ylow - 1.0)
+    return centre(soften(unary_union([ear, stalk.difference(ear.buffer(LINE))]), 0.25))
+
+def _leaf(L, W):
+    """Pointed leaf (lens) along +x from the origin, length L, width W."""
+    r = (L * L / 4 + W * W / 4) / W; d = r - W / 2
+    return Point(L / 2, -d).buffer(r, quad_segs=48).intersection(Point(L / 2, d).buffer(r, quad_segs=48))
+
+def sheep_head(s, style):
+    """Head and ears as one solid shape. a: narrowing head, level ears; b: broader head, drooping ears;
+    c: long narrow head, ears swept back up."""
+    top_r, top_y, mz_r, mz_y, ang, ear_y, L, W = {
+        'a': (4.8, 1.6, 3.1, -4.6, -18, 2.0, 5.4, 2.8),
+        'b': (5.2, 1.4, 3.5, -3.8, -35, 1.6, 5.2, 3.0),
+        'c': (4.4, 1.8, 2.8, -5.4, 8, 2.8, 5.4, 2.6)}[style]
+    head = unary_union([Point(0, top_y * s).buffer(top_r * s, quad_segs=48), Point(0, mz_y * s).buffer(mz_r * s, quad_segs=48)]).convex_hull
+    ears = []
+    for sd in (-1, 1):
+        lf = _leaf(L * s, W * s)
+        lf = affinity.rotate(lf, ang if sd > 0 else 180 - ang, origin=(0, 0))
+        ears.append(affinity.translate(lf, sd * (top_r - 0.9) * s, ear_y * s))
+    return unary_union([head] + ears), head
+
+def sheep2(s=1.0, style='a'):
+    """The tidied sheep with the head drawn like the rest of the set: one solid head+ears shape,
+    split from the fleece by the same 0.8 mm gap (no outline ring)."""
+    body = _cloud(0, 1.2 * s, 9.2 * s, 8.6 * s, 11, 3.2 * s).buffer(0.6, join_style=1).buffer(-0.6, join_style=1)
+    unit, head = sheep_head(s, style)
+    unit = affinity.translate(unit, 0, -0.6 * s)
+    body = body.difference(unit.buffer(LINE, join_style=1))
+    legs = unary_union([box(sd * 3.8 * s - 1.6 * s, -14.5 * s, sd * 3.8 * s + 1.6 * s, -8.6 * s) for sd in (-1, 1)])
+    legs = legs.difference(unary_union([body, unit]).buffer(LINE))
+    return centre(soften(printable(unary_union([body, unit, legs]), w=0.6, speck=0.6)))
+
+def ore_rocks4(k=1.0):
+    """Final ore built at size: 0.8 mm facet lines, the small rock with two facets (chip merged)."""
+    S = lambda pts: [(x * k, y * k) for x, y in pts]
+    big = Polygon(S([(-5.5, -7.3), (1.6, -8.4), (8.6, -7.5), (11.0, -1.5), (6.5, 7.5), (-1.5, 9.0), (-7.5, 1.5)]))
+    small = Polygon(S([(-15.0, -7.4), (-11.0, -8.4), (-7.0, -7.7), (-6.4, -3.0), (-9.5, 1.8), (-14.2, -0.8)])).difference(big.buffer(LINE * 1.1))
+    ln = lambda p: LineString(S(p)).buffer(LINE / 2, cap_style=2, join_style=2)
+    fb = unary_union([ln(p) for p in [[(-1.5, 9.0), (1.0, 1.0), (6.5, 7.5)], [(1.0, 1.0), (1.6, -8.8)], [(1.0, 1.0), (-7.7, 1.5)], [(1.0, 1.0), (11.2, -1.5)]]])
+    fs = ln([(-12.6, 0.2), (-10.6, -4.6), (-10.2, -8.8)])
+    return centre(soften(printable(unary_union([big.difference(fb), small.difference(fs)]), w=0.6, speck=1.0)))
