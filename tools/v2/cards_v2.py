@@ -28,8 +28,8 @@ V1_DEV_BACK = pickle.load(open(os.path.join(SPD, 'dev_shapes.pkl'), 'rb'))['knig
 def back_resource(): return RES_LOGO
 def back_dev_v1(): return V1_DEV_BACK
 def back_costs_v1():
-    """Building Costs back: the hex ring with two coin stacks inside (same family as the trophy back)."""
-    return unary_union([RES_LOGO, G.coin_stacks_outline(LW)]).buffer(0)
+    """Building Costs back: the hex ring with three coin stacks inside (same family as the trophy back)."""
+    return unary_union([RES_LOGO, G.coin_stacks3(1.2)]).buffer(0)
 def back_trophy_v1():
     """The original Longest Road / Largest Army back (hex ring + trophy outline), traced from the v2 trophy."""
     t = G.trophy(17.5)
@@ -88,37 +88,45 @@ def fanned_cards(colours, w=8.6, h=12.0, spread=16.0, dx=5.0):
 def knight():
     g, k = G.fit_zone(G.helmet(31.0)); return {PURPLE: g}, PURPLE
 def victory_point():
-    g, k = G.fill_zone(G.trophy(25.1)); return {ORANGE: g}, ORANGE
+    g, k = G.fill_zone(G.trophy_open(25.1)); return {ORANGE: g}, ORANGE
 def road_building():
     z, k = G.fill_zone(G.road_hammer_cobbled()); return {WHITE: z}, GREEN
 def year_of_plenty():
-    f = fanned_cards([None, None], w=11.0, h=15.4, spread=14.0, dx=6.4)
+    """Same card size as Monopoly's (built at final size)."""
+    monopoly(); s_ = yop_card_scale() * monopoly.scale_note
+    f = fanned_cards([None, None], w=11.0 * s_, h=15.4 * s_, spread=14.0, dx=6.4 * s_)
     allg = unary_union(list(f.values())); b = allg.bounds
-    f = {k: place(v, -(b[0] + b[2]) / 2, -(b[1] + b[3]) / 2) for k, v in f.items()}
-    _, s_ = G.fill_zone(unary_union(list(f.values())))
-    return {k: affinity.scale(v, s_, s_, origin=(0, 0)) for k, v in f.items()}, GREEN
+    return {k: place(v, -(b[0] + b[2]) / 2, -(b[1] + b[3]) / 2) for k, v in f.items()}, GREEN
+def yop_card_scale():
+    f = fanned_cards([None, None], w=11.0, h=15.4, spread=14.0, dx=6.4)
+    allg = unary_union(list(f.values())); _, s_ = G.fill_zone(allg); return s_
+MONO_OVERLAP = 0.5
+def monopoly_at(s_):
+    w, h = 11.0 * s_, 15.4 * s_
+    f = fanned_cards([None, None, None], w=w, h=h, spread=12.0, dx=3.2 * s_)
+    cards = unary_union(list(f.values())); cb = cards.bounds
+    cr = G.crown2(w * 1.35); crb = cr.bounds
+    ov = MONO_OVERLAP * (crb[3] - crb[1])
+    cr = place(cr, (cb[0] + cb[2]) / 2 - (crb[0] + crb[2]) / 2, cb[3] - ov - crb[1])        # crown resting on the fan
+    hull = cr.convex_hull.buffer(G.GAP, join_style=1)
+    cards = unary_union([p for p in G.pieces(cards.difference(hull)) if p.area > 1.0])     # clean cut, no slivers
+    g = unary_union([cards, cr]); b = g.bounds
+    return place(g, -(b[0] + b[2]) / 2, -(b[1] + b[3]) / 2)
 def monopoly():
-    cr = G.crown2(14.0)
-    f = fanned_cards([None, None, None], w=8.4, h=11.8, spread=16.0, dx=4.6)
-    fb = unary_union(list(f.values())).bounds
-    f = {k: place(v, -(fb[0] + fb[2]) / 2, -6.2 - (fb[1] + fb[3]) / 2) for k, v in f.items()}
-    cr = place(cr, 0, 8.6)
-    out = merge(f, {WHITE: cr})
-    allg = unary_union(list(out.values())); b = allg.bounds
-    out = {s: place(v, -(b[0] + b[2]) / 2, -(b[1] + b[3]) / 2) for s, v in out.items()}
-    _, k = G.fill_zone(unary_union(list(out.values())))
-    out = {s: G.printable(affinity.scale(v, k, k, origin=(0, 0)), w=0.6, speck=0.5) for s, v in out.items()}
-    out[WHITE] = out[WHITE].buffer(0.2, join_style=1).buffer(-0.2, join_style=1)     # seal hairline cracks (< 0.4 mm)
-    return out, GREEN
+    """Built at its final size (no shrinking afterwards, so the 0.7 mm lines and gaps stay 0.7 mm)."""
+    yop = yop_card_scale(); s_ = yop
+    while s_ > 0.4 and not ZONE.contains(monopoly_at(s_)): s_ -= 0.01
+    monopoly.scale_note = s_ / yop
+    return {WHITE: G.printable(monopoly_at(s_), w=0.6, speck=0.8)}, GREEN
 
 # ---------------------------------------------------------------- table cards
-TROPHY_Y, TROPHY_H = -14.0, 9.5
+TROPHY_Y, TROPHY_H = -15.0, 12.5
 def trophies():
     t = G.trophy(TROPHY_H)
     w = t.bounds[2] - t.bounds[0]
     return unary_union([place(t, -(w / 2 + 1.6), TROPHY_Y), place(t, w / 2 + 1.6, TROPHY_Y)])
 def longest_road():
-    chain = G.cobbled_winding(5, 8.6, 6.0)
+    chain = G.cobbled_winding2(5, 8.8, 6.8, 4.2)
     return {WHITE: place(chain, 0, 6.0), ORANGE: trophies()}, ORANGE
 def largest_army():
     big = G.helmet(22.0); small = G.helmet(15.5); base = -6.0; gap = 1.4
@@ -126,20 +134,23 @@ def largest_army():
     h = unary_union([place(big, 0, base - big.bounds[1])] + [place(small, sd * (wb / 2 + gap + ws / 2), base - small.bounds[1]) for sd in (-1, 1)])
     return {PURPLE: h, ORANGE: trophies()}, ORANGE
 def building_costs():
+    """Each piece centred, its cost centred underneath: four blocks down the card (balanced, no corner hexes)."""
     rows = [('road', ['brick', 'wood']), ('settlement', ['brick', 'wood', 'wheat', 'sheep']),
             ('city', ['ore', 'ore', 'ore', 'wheat', 'wheat']), ('dev', ['ore', 'wheat', 'sheep'])]
     slot = {'brick': BRICK, 'wood': WOOD, 'wheat': WHEAT, 'sheep': WHITE, 'ore': ORE}
-    piece = {'road': affinity.rotate(G.road_piece(), 30, origin=(0, 0)),
-             'settlement': affinity.scale(V1.p_settlement(), 1.25, 1.25, origin=(0, 0)),
-             'city': affinity.scale(V1.p_city(), 1.25, 1.25, origin=(0, 0)),
-             'dev': G.card(6.0, 8.4, False)[0]}
-    out = {}
-    for i, (p, res) in enumerate(rows):
-        y = 21.0 - i * 14.0
-        g = piece[p]; b = g.bounds; out = merge(out, {WHITE: place(g, -18.6 - (b[0] + b[2]) / 2, y - (b[1] + b[3]) / 2)})
-        x = -13.0
-        for r in res:
-            out = merge(out, {slot[r]: place(V1.hexagon(0, 0, 6.5).buffer(0.25, join_style=1).buffer(-0.25, join_style=1), x + 3.25, y)}); x += 7.5
+    piece = {'road': G.road_piece(),
+             'settlement': affinity.scale(V1.p_settlement(), 1.15, 1.15, origin=(0, 0)),
+             'city': affinity.scale(V1.p_city(), 1.15, 1.15, origin=(0, 0)),
+             'dev': G.card(5.2, 7.2, False)[0]}
+    HW, step, out = 6.6, 7.6, {}
+    hexg = V1.hexagon(0, 0, HW).buffer(0.25, join_style=1).buffer(-0.25, join_style=1)
+    ys = [27.5, 9.5, -8.5, -26.5]
+    for (p, res), y in zip(rows, ys):
+        g = piece[p]; b = g.bounds
+        out = merge(out, {WHITE: place(g, -(b[0] + b[2]) / 2, y + 4.2 - (b[1] + b[3]) / 2)})
+        n = len(res); x0 = -(n - 1) * step / 2
+        for i, r in enumerate(res):
+            out = merge(out, {slot[r]: place(hexg, x0 + i * step, y - 4.3)})
     return out, None
 
 # ---------------------------------------------------------------- resource cards (v2 options for wheat and ore)
@@ -149,14 +160,20 @@ def wheat_card(option):
     elif option == 'r4': g = centre(G.wheat_v2(0.67, 4))
     else: g = centre(G.wheat_v2(0.67, 3))
     return {WHEAT: g}, WHEAT
-def ore_card():
-    g, f = G.ore6_final(); return {ORE: g}, ORE
+def ore_card(opt='plain'):
+    if opt == 'plain': g = G.fit_zone(G.ore_mountains_plain(1.0))[0]
+    elif opt == 'rocks': g = G.fit_zone(G.ore_rocks())[0]
+    else: g = G.at_final(G.ingots3d)[0]
+    return {ORE: g}, ORE
 
 CARDS = {
     'Knight': (knight, back_dev_v1), 'Victory Point': (victory_point, back_dev_v1), 'Road Building': (road_building, back_dev_v1),
     'Year of Plenty': (year_of_plenty, back_dev_v1), 'Monopoly': (monopoly, back_dev_v1),
     'Building Costs': (building_costs, back_costs_v1), 'Longest Road': (longest_road, back_trophy_v1), 'Largest Army': (largest_army, back_trophy_v1),
-    'Ore': (ore_card, back_resource),
+    'Ore: mountains': (lambda: ore_card('plain'), back_resource), 'Ore: rocks': (lambda: ore_card('rocks'), back_resource),
+    'Ore: ingots': (lambda: ore_card('ingots'), back_resource),
+    'Brick: 3D': (lambda: ({BRICK: G.at_final(G.bricks3d)[0]}, BRICK), back_resource),
+    'Wheat: v1': (lambda: wheat_card('v1'), back_resource), 'Wheat: one ear': (lambda: ({WHEAT: G.wheat_ear_final()}, WHEAT), back_resource),
 }
 def build(name):
     f, back = CARDS[name]

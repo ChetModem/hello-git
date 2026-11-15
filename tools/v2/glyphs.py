@@ -569,3 +569,160 @@ def coin_stacks_outline(lw):
     stack(6.4, -8.0, 3, 7.8)
     g = unary_union(parts)
     return centre(printable(g, w=0.6, speck=0.5))
+
+# ---------------------------------------------------------------- v2e
+def cobbled_path2(pts, width, stone):
+    """Cobbled road with joints everywhere, including through each bend (a joint along the bend's bisector)."""
+    line = LineString(pts); L = line.length
+    body = line.buffer(width / 2, cap_style=2, join_style=2, mitre_limit=4)
+    joints = [line.buffer(GAP / 2, cap_style=2)]
+    cum = [0.0]
+    for a, b in zip(pts[:-1], pts[1:]): cum.append(cum[-1] + np.hypot(b[0] - a[0], b[1] - a[1]))
+    for i in range(1, len(pts) - 1):                          # joint through each bend, along the bisector
+        (x0, y0), (x1, y1), (x2, y2) = pts[i - 1], pts[i], pts[i + 1]
+        u = np.array([x1 - x0, y1 - y0]); u /= np.linalg.norm(u); v = np.array([x2 - x1, y2 - y1]); v /= np.linalg.norm(v)
+        bis = u + v; nrm = np.array([-bis[1], bis[0]]); nrm /= np.linalg.norm(nrm)
+        joints.append(LineString([(x1 - nrm[0] * width, y1 - nrm[1] * width), (x1 + nrm[0] * width, y1 + nrm[1] * width)]).buffer(GAP / 2, cap_style=2))
+    for i in range(len(pts) - 1):                             # stones along each straight run, staggered rows
+        (x0, y0), (x1, y1) = pts[i], pts[i + 1]
+        seg = np.hypot(x1 - x0, y1 - y0); ux, uy = (x1 - x0) / seg, (y1 - y0) / seg; nx, ny = -uy, ux
+        for side, start in ((1, stone * 0.5), (-1, stone)):
+            s = start
+            while s < seg - stone * 0.35:
+                if s > stone * 0.35:
+                    px, py = x0 + ux * s, y0 + uy * s
+                    joints.append(LineString([(px, py), (px + side * nx * width, py + side * ny * width)]).buffer(GAP / 2, cap_style=2))
+                s += stone
+    g = body.difference(unary_union(joints))
+    return printable(g.buffer(0), w=0.6, speck=0.8)
+
+def cobbled_winding2(n, seg, width, stone, angle=30):
+    pts = [(0.0, 0.0)]
+    for k in range(n):
+        a = angle if k % 2 == 0 else -angle
+        x, y = pts[-1]; pts.append((x + seg * np.cos(np.radians(a)), y + seg * np.sin(np.radians(a))))
+    return centre(cobbled_path2(pts, width, stone))
+
+def coin_stack(cx, base, n, w, lw, t):
+    """One stack in line style: n coins, each a front edge (lower half-ellipse) t apart, with side lines,
+    and the top coin's full face as an oval."""
+    ry = w * 0.24
+    parts = []
+    top_y = base + (n - 1) * t
+    face = affinity.translate(affinity.scale(Point(0, 0).buffer(1, quad_segs=48), w / 2, ry), cx, top_y + ry)
+    parts.append(face.difference(face.buffer(-lw, join_style=1)))
+    for k in range(n):
+        y = base + k * t
+        e = affinity.translate(affinity.scale(Point(0, 0).buffer(1, quad_segs=48), w / 2, ry), cx, y + ry)
+        lower = e.difference(e.buffer(-lw)).intersection(box(cx - w, y - 1, cx + w, y + ry))
+        parts.append(lower)
+    parts.append(box(cx - w / 2, base + ry, cx - w / 2 + lw, top_y + ry))     # sides
+    parts.append(box(cx + w / 2 - lw, base + ry, cx + w / 2, top_y + ry))
+    return unary_union(parts)
+
+def coin_stacks3(lw=1.2):
+    """Three stacks: tallest in the middle, one side lower, the other lowest."""
+    w = 6.4; t = lw + GAP + 0.15; gap_x = 1.2
+    xs = (-(w + gap_x), 0.0, w + gap_x); ns = (4, 6, 3)
+    g = unary_union([coin_stack(x, -6.0, n, w, lw, t) for x, n in zip(xs, ns)])
+    return centre(printable(g.buffer(0), w=0.6, speck=0.5))
+
+def trophy_open(height):
+    """Large trophy: open handle loops (as v1) but the solid black star of the small trophies."""
+    t = dev_icon('vp', height)
+    ps = sorted(pieces(t), key=lambda p: -p.area)
+    main = ps[0]                                      # dropping the small islands makes the star hole solid black
+    g = Polygon(main.exterior, main.interiors).buffer(0)
+    return centre(printable(g, w=0.6, speck=1.0))
+
+def wheat_one_ear(k=1.25, rows=5):
+    """A single large ear of wheat (centre ear of the v1 drawing, scaled up with gaps kept at 0.65 mm)."""
+    pc = 3.28 * 6 / rows
+    c, wc = I.ear(0.0, (16.2 * k, 11.4 * k), 2.0 * k, rows, 12.5 * k, 8.0 * k, 0.85, 4.75 * k, pc * k)
+    stalk = stadium((0.0, 8.0 * k - (rows - 1) * pc * k - 1.6), (0.0, -17.2 * k + 3.5 * k), 1.3 * k)
+    wheat_one_ear.w = wc
+    return centre(unary_union(c + [stalk]))
+
+def ore_mountains_plain(f=0.80):
+    big = affinity.scale(Polygon([(-6.0, -10.0), (16.0, -10.0), (5.0, 13.5)]), f, f, origin=(0, 0))
+    small = affinity.scale(Polygon([(-16.0, -10.0), (-1.5, -10.0), (-8.75, 4.0)]), f, f, origin=(0, 0)).difference(big.buffer(GAP * 1.2))
+    soft = lambda p, r: p.buffer(-r, join_style=1).buffer(r, quad_segs=8)
+    big, small = soft(big, 0.5), soft(small, 0.4)
+    ridge_b = LineString([(5.0 * f, 12.4 * f), (5.7 * f, 3.2 * f), (7.3 * f, 1.0 * f), (7.9 * f, -10.6 * f)]).buffer(0.42, cap_style=2, join_style=2)
+    g = printable(unary_union([big.difference(ridge_b), small]), w=0.6, speck=1.0)
+    c = g.centroid; return affinity.translate(g, -c.x, -(g.bounds[1] + g.bounds[3]) / 2)
+
+def ore_rocks():
+    """Hunks of ore: a big faceted rock and a smaller one beside it, black facet lines for the cut faces."""
+    big = Polygon([(-5.5, -8.0), (8.5, -8.0), (11.0, -1.5), (6.5, 7.5), (-1.5, 9.0), (-7.5, 1.5)])
+    small = Polygon([(-15.0, -8.0), (-7.0, -8.0), (-6.4, -3.0), (-9.5, 1.5), (-14.0, -1.0)]).difference(big.buffer(GAP * 1.2))
+    facets_b = unary_union([LineString(p).buffer(0.4, cap_style=2, join_style=2) for p in
+                            [[(-1.5, 9.0), (1.0, 1.0), (6.5, 7.5)], [(1.0, 1.0), (2.5, -8.2)], [(1.0, 1.0), (-7.5, 1.5)], [(1.0, 1.0), (11.0, -1.5)]]])
+    facets_s = unary_union([LineString(p).buffer(0.38, cap_style=2, join_style=2) for p in [[(-9.5, 1.5), (-10.4, -3.0), (-6.4, -3.0)], [(-10.4, -3.0), (-11.2, -8.2)]]])
+    soft = lambda p, r: p.buffer(-r, join_style=1).buffer(r, quad_segs=8)
+    g = printable(unary_union([soft(big, 0.35).difference(facets_b), soft(small, 0.3).difference(facets_s)]), w=0.6, speck=1.0)
+    c = g.centroid; return affinity.translate(g, -c.x, -(g.bounds[1] + g.bounds[3]) / 2)
+
+def ingot(w, h, top):
+    """One ingot seen from the front and slightly above: trapezoid front face + top face, black line between."""
+    front = Polygon([(-w / 2, 0), (w / 2, 0), (w / 2 - h * 0.45, h), (-w / 2 + h * 0.45, h)])
+    topf = Polygon([(-w / 2 + h * 0.45, h + GAP), (w / 2 - h * 0.45, h + GAP), (w / 2 - h * 0.45 - top * 0.6, h + GAP + top), (-w / 2 + h * 0.45 + top * 0.6, h + GAP + top)])
+    return unary_union([front, topf]).buffer(0.25, join_style=1).buffer(-0.25, join_style=1)
+
+def ore_ingots():
+    w, h, top = 11.5, 4.2, 2.6
+    a = place(ingot(w, h, top), -(w / 2 + 0.6), -8.0); b = place(ingot(w, h, top), w / 2 + 0.6, -8.0)
+    c = place(ingot(w, h, top), 0, -8.0 + h + GAP + top + GAP)
+    g = unary_union([a, b, c.difference(unary_union([a, b]).buffer(GAP))])
+    return centre(printable(g, w=0.6, speck=1.0))
+
+
+def wheat_ear_final():
+    """Largest single ear that fits the safe zone as drawn (no shrinking), every gap >= 0.65 mm."""
+    z = safe_zone()
+    for k in np.arange(1.4, 0.8, -0.01):
+        g = wheat_one_ear(k)
+        if z.contains(g) and closest(g) >= 0.64: wheat_ear_final.k = k; return g
+
+# ---------------------------------------------------------------- 3/4-view materials in the style of the wood card
+def prism_stack(section, centres, length, ang=29.5, gap=GAP):
+    """Same construction as the wood icon: an end face at each centre, and long bodies running back at `ang`
+    from the top end and the bottom-right end (the bottom-left one stays an end only, like the wood).
+    `section` is the end shape centred on (0,0)."""
+    d = np.array([np.cos(np.radians(ang)), np.sin(np.radians(ang))]) * length
+    ends = [place(section, *c) for c in centres]
+    cut = unary_union([e.buffer(gap, join_style=2) for e in ends])
+    def body(c):
+        e = place(section, *c)
+        return unary_union([e, place(e, *d)]).convex_hull.difference(cut)
+    top, br = centres[0], centres[2]
+    a = body(top); b = body(br)
+    a = a.difference(b.buffer(gap, join_style=2))
+    return centre(unary_union(ends + [a, b]))
+
+def bricks3d(s=1.0):
+    """Bricks laid flat, ends towards you: end = flat rectangle."""
+    w, h = 6.2 * s, 3.6 * s
+    sec = rr(-w / 2, -h / 2, w / 2, h / 2, 0.45)
+    cs = [(-(w / 2 + GAP / 2) + (w + GAP) / 2 - (w + GAP) / 2 + 0.0, h + GAP), (-(w + GAP) / 2, 0.0), ((w + GAP) / 2, 0.0)]
+    cs = [(0.0, h + GAP), (-(w + GAP) / 2, 0.0), ((w + GAP) / 2, 0.0)]           # top brick centred on the two below
+    return prism_stack(sec, cs, 14.0 * s)
+
+def ingots3d(s=1.0):
+    """Ingots, ends towards you: end = trapezoid (narrow on top)."""
+    wb, wt, h = 7.0 * s, 4.4 * s, 4.0 * s
+    sec = Polygon([(-wb / 2, -h / 2), (wb / 2, -h / 2), (wt / 2, h / 2), (-wt / 2, h / 2)]).buffer(0.3, join_style=1).buffer(-0.3, join_style=1)
+    cs = [(0.0, h + GAP), (-(wb + GAP) / 2, 0.0), ((wb + GAP) / 2, 0.0)]
+    return prism_stack(sec, cs, 14.0 * s)
+
+def wood3d_check(s=1.0):
+    """The wood icon rebuilt with prism_stack (circles), to confirm the construction matches the real wood card."""
+    r = 3.4 * s; sec = Point(0, 0).buffer(r, quad_segs=48)
+    return prism_stack(sec, [(-5.85 * s + 5.85 * s - 4.0 * s + 4.0 * s, 6.8 * s), (-4.0 * s, 0.0), (4.0 * s, 0.0)], 14.6 * s)
+
+def at_final(fn):
+    """Largest version of fn(s) that fits the safe zone as drawn (gaps stay 0.7 mm)."""
+    z = safe_zone()
+    for s_ in np.arange(1.6, 0.5, -0.01):
+        g = fn(s_)
+        if z.contains(g) and closest(g) >= GAP - 0.01: return g, s_
