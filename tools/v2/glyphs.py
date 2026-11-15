@@ -1316,3 +1316,36 @@ def ore_rocks5(k=1.0):
     fb = unary_union([ln(p) for p in [[(-1.5, 9.0), (1.0, 1.0), (6.5, 7.5)], [(1.0, 1.0), (1.6, -8.8)], [(1.0, 1.0), (-7.7, 1.5)], [(1.0, 1.0), (11.2, -1.5)]]])
     fs = unary_union([ln([(-12.6, 0.2), (-11.4, -2.4), (-10.8, -8.9)]), ln([(-11.4, -2.4), (-6.6, -5.2)])])
     return centre(soften(printable(unary_union([big.difference(fb), small.difference(fs)]), w=0.6, speck=1.0)))
+
+# ---------------------------------------------------------------- round 6
+BRICK_MORTAR = 0.9
+def brick2():
+    """v1 brick wall layout rebuilt on the set's system: 0.3 mm corners, 0.9 mm mortar (a touch bolder than 0.8)."""
+    m, h = BRICK_MORTAR, 5.08; full = 14.19
+    mid = [box(-full, -h / 2, -m / 2, h / 2), box(m / 2, -h / 2, full, h / 2)]
+    y1 = h / 2 + m
+    rows = [box(-6.78, y1, 6.78, y1 + h), box(-6.78, -y1 - h, 6.78, -y1)]
+    return centre(soften(unary_union(mid + rows), 0.3))
+
+def wheat_angular3(k=1.0, rows=5, w=1.95, pitch0=2.85, extra=1.5):
+    """wheat_angular2 with grains packed a little closer and the saved height given to the stalk."""
+    parts = []; pitch = pitch0 * k; y0 = 6.0 * k
+    for i in range(rows):
+        y = y0 - i * pitch
+        for sd in (-1, 1):
+            parts.append(_grain((sd * (LINE / 2 + 0.25), y), (sd * 4.6 * k, y + 3.1 * k), w))
+    parts.append(_grain((0, y0 + 2.1 * k), (0, y0 + 2.1 * k + 5.4 * k), w))
+    ear = unary_union(parts)
+    ylow = y0 - (rows - 1) * pitch
+    stalk = box(-1.0, ylow - (4.2 + extra) * k, 1.0, ylow - 1.0)
+    return centre(soften(unary_union([ear, stalk.difference(ear.buffer(LINE))]), 0.25))
+
+def ore_rocks6(k=1.0):
+    """ore_rocks5 with the small rock's lines as they were in round 3 (small lower-right face)."""
+    S = lambda pts: [(x * k, y * k) for x, y in pts]
+    big = Polygon(S([(-5.5, -7.3), (1.6, -8.4), (8.6, -7.5), (11.0, -1.5), (6.5, 7.5), (-1.5, 9.0), (-7.5, 1.5)]))
+    small = Polygon(S([(-15.0, -7.4), (-11.0, -8.4), (-7.0, -7.7), (-6.4, -3.0), (-9.5, 1.8), (-14.2, -0.8)])).difference(big.buffer(LINE * 1.1))
+    ln = lambda p: LineString(S(p)).buffer(LINE / 2, cap_style=2, join_style=2)
+    fb = unary_union([ln(p) for p in [[(-1.5, 9.0), (1.0, 1.0), (6.5, 7.5)], [(1.0, 1.0), (1.6, -8.8)], [(1.0, 1.0), (-7.7, 1.5)], [(1.0, 1.0), (11.2, -1.5)]]])
+    fs = unary_union([ln([(-12.6, 0.2), (-10.6, -4.6), (-10.2, -8.9)]), ln([(-10.6, -4.6), (-6.6, -5.2)])])
+    return centre(soften(printable(unary_union([big.difference(fb), small.difference(fs)]), w=0.6, speck=1.0)))
