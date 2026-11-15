@@ -1149,3 +1149,76 @@ def wheat_broad(xo=6.4, rows=5, stalk=1.6):
         st = stadium((0.0, 8.0 * k - (rows - 1) * pc * k - 1.8), (0.0, -17.2 * k + 3.5 * k), stalk * k)
         g = centre(unary_union(c + [st]))
         if z.contains(g) and closest(g) >= 0.64: wheat_broad.w = wc; return g
+
+# ---------------------------------------------------------------- round 3: ore base, minimal sheep, angular wheat
+def ore_rocks3():
+    """Rocks sitting on an uneven, angled base; big rock keeps its facets, small rock gets a Y of facet lines."""
+    big = Polygon([(-5.5, -7.3), (1.6, -8.4), (8.6, -7.5), (11.0, -1.5), (6.5, 7.5), (-1.5, 9.0), (-7.5, 1.5)])
+    small = Polygon([(-15.0, -7.4), (-11.0, -8.4), (-7.0, -7.7), (-6.4, -3.0), (-9.5, 1.8), (-14.2, -0.8)]).difference(big.buffer(GAP * 1.2))
+    facets_b = unary_union([LineString(p).buffer(0.4, cap_style=2, join_style=2) for p in
+                            [[(-1.5, 9.0), (1.0, 1.0), (6.5, 7.5)], [(1.0, 1.0), (1.6, -8.6)], [(1.0, 1.0), (-7.5, 1.5)], [(1.0, 1.0), (11.0, -1.5)]]])
+    facets_s = unary_union([LineString(p).buffer(0.38, cap_style=2, join_style=2) for p in
+                            [[(-12.6, 0.2), (-10.6, -4.6), (-10.2, -8.6)], [(-10.6, -4.6), (-6.4, -5.2)]]])
+    soft = lambda p, r: p.buffer(-r, join_style=1).buffer(r, quad_segs=8)
+    return printable(unary_union([soft(big, 0.35).difference(facets_b), soft(small, 0.3).difference(facets_s)]), w=0.6, speck=1.0)
+
+def sheep_tidy(s=1.0):
+    """The current sheep, tidied: even fleece lobes, the head as a clean oval set in with a black ring,
+    small ears, two legs. No face details (stays minimal)."""
+    body = _cloud(0, 1.2 * s, 9.2 * s, 8.6 * s, 11, 3.2 * s).buffer(0.6, join_style=1).buffer(-0.6, join_style=1)
+    head = affinity.translate(affinity.scale(Point(0, 0).buffer(1, quad_segs=64), 4.9 * s, 6.6 * s), 0, -1.2 * s)
+    ears = unary_union([affinity.rotate(affinity.translate(affinity.scale(Point(0, 0).buffer(1, quad_segs=32), 2.4 * s, 1.15 * s),
+                         sd * 7.2 * s, 2.8 * s), -sd * 14, origin=(sd * 7.2 * s, 2.8 * s)) for sd in (-1, 1)])
+    body = body.difference(unary_union([head, ears]).buffer(1.0 * s, join_style=1))
+    legs = unary_union([rr(sd * 3.8 * s - 1.6 * s, -14.5 * s, sd * 3.8 * s + 1.6 * s, -8.6 * s, 0.9 * s) for sd in (-1, 1)])
+    legs = legs.difference(unary_union([body, head]).buffer(GAP))
+    return centre(printable(unary_union([body, head, ears.difference(head.buffer(GAP)), legs]), w=0.6, speck=0.6))
+
+def sheep_face_min(s=1.0):
+    """Sheep's face, front-on, no features: long face, woolly cap over it, ears out to the sides."""
+    face = unary_union([affinity.translate(affinity.scale(Point(0, 0).buffer(1, quad_segs=48), 6.0 * s, 8.6 * s), 0, -2.0 * s),
+                        affinity.translate(affinity.scale(Point(0, 0).buffer(1, quad_segs=48), 4.6 * s, 3.6 * s), 0, -8.4 * s)])
+    cap = _cloud(0, 7.0 * s, 7.6 * s, 3.6 * s, 9, 2.6 * s).buffer(0.4, join_style=1).buffer(-0.4, join_style=1).difference(face.buffer(GAP))
+    ears = unary_union([affinity.rotate(affinity.translate(affinity.scale(Point(0, 0).buffer(1, quad_segs=32), 4.4 * s, 1.8 * s), sd * 10.0 * s, 2.0 * s), -sd * 20, origin=(sd * 10.0 * s, 2.0 * s)) for sd in (-1, 1)])
+    ears = ears.difference(unary_union([face, cap]).buffer(GAP))
+    return centre(printable(unary_union([face, cap, ears]), w=0.6, speck=0.6))
+
+def _grain(a, b, w):
+    """Angular grain: six-sided, pointed but blunt ends (ends 40% of the width so they print)."""
+    a, b = np.array(a), np.array(b); u = (b - a) / np.linalg.norm(b - a); n = np.array([-u[1], u[0]]); L = np.linalg.norm(b - a)
+    q = 0.28 * L
+    pts = [a + n * w * 0.2, a + u * q + n * w / 2, b - u * q + n * w / 2, b + n * w * 0.2, b - n * w * 0.2, b - u * q - n * w / 2, a + u * q - n * w / 2, a - n * w * 0.2]
+    return Polygon([tuple(p) for p in pts])
+
+def wheat_angular(k=1.0, rows=5, w=1.75):
+    """Single ear with angular (six-sided) grains in pairs, a pointed top grain and a straight stalk."""
+    parts = []
+    pitch = 3.0 * k; y0 = 6.0 * k
+    for i in range(rows):
+        y = y0 - i * pitch
+        for sd in (-1, 1):
+            a = (sd * (GAP / 2 + 0.25), y); b = (sd * 4.3 * k, y + 3.0 * k)
+            parts.append(_grain(a, b, w))
+    parts.append(_grain((0, y0 + 2.0 * k), (0, y0 + 2.0 * k + 5.2 * k), w))
+    ear = unary_union(parts)
+    stalk = box(-0.6, y0 - (rows - 1) * pitch - 6.5 * k, 0.6, y0 - (rows - 1) * pitch - 1.6)
+    return centre(unary_union([ear, stalk.difference(ear.buffer(GAP))]))
+
+def wheat_chevron(k=1.0, rows=5):
+    """Single ear built from stacked V-shaped (chevron) grains, angular like the pine tiers."""
+    parts = []; pitch = 3.0 * k; y0 = 6.0 * k; t = 1.6
+    for i in range(rows):
+        y = y0 - i * pitch
+        v = LineString([(-4.3 * k, y + 3.0 * k), (0, y), (4.3 * k, y + 3.0 * k)]).buffer(t / 2, cap_style=2, join_style=2, mitre_limit=3)
+        parts.append(v)
+    top = _grain((0, y0 + 1.6 * k), (0, y0 + 1.6 * k + 5.0 * k), 1.9)
+    ear = unary_union(parts + [top.difference(unary_union(parts).buffer(GAP))])
+    stalk = box(-0.6, y0 - (rows - 1) * pitch - 6.5 * k, 0.6, y0 - (rows - 1) * pitch - 1.4)
+    return centre(unary_union([ear, stalk.difference(ear.buffer(GAP))]))
+
+def fit_param(fn, lo=0.6, hi=1.6):
+    """Largest fn(k) that fits the safe zone with every gap >= 0.65 mm (gaps not scaled)."""
+    z = safe_zone()
+    for k in np.arange(hi, lo, -0.01):
+        g = fn(k)
+        if z.contains(g) and closest(g) >= 0.64: return g
