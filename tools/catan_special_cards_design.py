@@ -37,6 +37,8 @@ class _Pen(BasePen):
     _endPath = _closePath
 
 FONTS = {}
+TRACK = 0.55        # mm of extra space between letters (bold text otherwise nearly touches)
+I_DOT_LIFT = 0.45   # mm: extra space between the dot and stem of i and j
 def _font(bold):
     f = '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf' if bold else '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'
     if f not in FONTS:
@@ -46,10 +48,11 @@ def _font(bold):
         FONTS[f] = (t, gs, cm, t['hmtx'], t['head'].unitsPerEm, bp.bounds[3])
     return FONTS[f]
 
-def text(s, cap, bold=True):
+def text(s, cap, bold=True, track=None):
     """Text outline with its baseline at y=0, starting at x=0; cap = capital letter height in mm."""
     t, gs, cmap, hmtx, upm, caph = _font(bold)
     k = cap / caph; x = 0; polys = []
+    tr = (TRACK if track is None else track) / k
     for ch in s:
         g = cmap.get(ord(ch), 'space'); adv = hmtx[g][0]
         pen = _Pen(gs); gs[g].draw(pen)
@@ -57,9 +60,12 @@ def text(s, cap, bold=True):
         for c in pen.contours:
             p = Polygon(c).buffer(0)
             shape = shape.symmetric_difference(p)      # even-odd: holes in letters come out right
+        if ch in 'ij' and hasattr(shape, 'geoms') and len(shape.geoms) == 2:
+            dot, stem = sorted(shape.geoms, key=lambda g: -g.centroid.y)
+            shape = unary_union([stem, affinity.translate(dot, 0, I_DOT_LIFT / k)])   # open the dot gap (prints as 'l' otherwise)
         if not shape.is_empty: polys.append(affinity.translate(affinity.scale(shape, k, k, origin=(0, 0)), x * k, 0))
-        x += adv
-    return unary_union(polys) if polys else Polygon(), x * k
+        x += adv + tr
+    return unary_union(polys) if polys else Polygon(), (x - tr) * k
 
 def width(s, cap, bold=True):
     return text(s, cap, bold)[1]
@@ -91,10 +97,13 @@ def m_wood():
                         Point(0, -1.25 + d * np.sqrt(3) / 2).buffer(r, quad_segs=24)])
 
 def m_wheat():
-    parts = [stadium((0, -3.4), (0, -1.0), 0.8), stadium((0, 2.2), (0, 3.4), 1.0)]
-    for y in (-0.9, 0.9):
-        for s in (-1, 1):
-            parts.append(stadium((s * 0.95, y - 0.35), (s * 1.75, y + 0.75), 1.0))
+    """Stalk with two tiers of grains at 30 deg and a top grain. Parallel grains sit 1.95 mm apart
+    vertically = 1.69 mm apart square-on, leaving 0.74 mm of black between them."""
+    w = 0.95
+    parts = [stadium((0, -3.0), (0, 1.6), 0.9), stadium((0, 2.05), (0, 3.4), 1.0)]
+    for y in (-1.2, 0.75):
+        for sd in (-1, 1):
+            parts.append(stadium((sd * 0.2, y), (sd * 1.7, y + 0.866), w))
     return unary_union(parts)
 
 def m_sheep():
@@ -134,8 +143,8 @@ def dev_icon(name, height):
     k = height / h0
     for _ in range(3):
         p = dev_icons.solid(name, k); k = height / (p.bounds[3] - p.bounds[1])
-    p = affinity.scale(dev_icons.solid(name, k), k, k, origin=(0, 0))
-    c = p.centroid; b = p.bounds
+    p = affinity.scale(dev_icons.solid(name, k), -k, k, origin=(0, 0))   # stored as printed (face down) -> mirror to the face view
+    b = p.bounds
     return affinity.translate(p, -(b[0] + b[2]) / 2, -(b[1] + b[3]) / 2)
 
 def hexagon(cx, cy, w=6.06):
@@ -149,8 +158,9 @@ def place(g, x, y): return affinity.translate(g, x, y)
 
 def printable(g, w=0.6, speck=2.0):
     g = g.buffer(-w / 2, join_style=1).buffer(w / 2, join_style=1).buffer(0)
-    gs = list(g.geoms) if hasattr(g, 'geoms') else [g]
-    return unary_union([x for x in gs if x.area >= speck])      # no stray specks left behind
+    gs = [x for x in (list(g.geoms) if hasattr(g, 'geoms') else [g]) if x.area >= speck]      # no stray specks left behind
+    keep = [x for x in gs if not any(y.area > x.area and x.distance(y) < 0.6 for y in gs if y is not x) or x.area > 6]
+    return unary_union(keep)
 
 # ---------------------------------------------------------------- cards: {colour slot: shape}
 RES = {'brick': (3, m_brick), 'wood': (4, m_wood), 'wheat': (5, m_wheat), 'sheep': (2, m_sheep), 'ore': (6, m_ore)}
@@ -179,8 +189,9 @@ def longest_road():
     x, y = pts[0]
     for a in ang:
         dx, dy = seg * np.cos(np.radians(a)), seg * np.sin(np.radians(a))
-        a0 = (x + dx * 0.0 + (GAP / 2 + wd / 2) * np.cos(np.radians(a)), y + (GAP / 2 + wd / 2) * np.sin(np.radians(a)))
-        a1 = (x + dx - (GAP / 2 + wd / 2) * np.cos(np.radians(a)), y + dy - (GAP / 2 + wd / 2) * np.sin(np.radians(a)))
+        off = (wd + GAP) / np.sqrt(3) + 0.05      # caps at a 60 deg bend sit sqrt(3)*off apart: leaves >= 0.7 mm
+        a0 = (x + off * np.cos(np.radians(a)), y + off * np.sin(np.radians(a)))
+        a1 = (x + dx - off * np.cos(np.radians(a)), y + dy - off * np.sin(np.radians(a)))
         roads.append(stadium(a0, a1, wd)); x, y = x + dx, y + dy
     r = unary_union(roads); b = r.bounds
     r = affinity.translate(r, -(b[0] + b[2]) / 2, 9.0 - (b[1] + b[3]) / 2)
@@ -275,7 +286,7 @@ def legend():
 def _road_chain(seg, wd):
     x, y = 0, 0; roads = []
     for a in [30, -30, 30, -30, 30]:
-        c, s = np.cos(np.radians(a)), np.sin(np.radians(a)); off = GAP / 2 + wd / 2
+        c, s = np.cos(np.radians(a)), np.sin(np.radians(a)); off = (wd + GAP) / np.sqrt(3) + 0.05
         roads.append(stadium((x + off * c, y + off * s), (x + seg * c - off * c, y + seg * s - off * s), wd)); x, y = x + seg * c, y + seg * s
     r = unary_union(roads); b = r.bounds
     return affinity.translate(r, -(b[0] + b[2]) / 2, -(b[1] + b[3]) / 2)
@@ -283,3 +294,32 @@ def _road_chain(seg, wd):
 def largest_army_small():
     h = dev_icon('knight', 11.0); w = h.bounds[2] - h.bounds[0]
     return unary_union([place(h, dx * (w + 0.9), 0) for dx in (-1, 0, 1)])
+
+
+# ---------------------------------------------------------------- back of the new cards
+def special_back():
+    """Same outer hex ring as the resource back, plus a solid hexagon in the middle
+    (the dev back has three nested rings). Symmetric, so it reads the same from either side."""
+    res = pickle.load(open(os.path.join(SP, 'logo.pkl'), 'rb'))
+    dev = pickle.load(open(os.path.join(SP, 'dev_shapes.pkl'), 'rb'))['knight']['logo']
+    rings = sorted(dev.geoms, key=lambda g: g.area)
+    middle = Polygon(rings[1].exterior)
+    return unary_union([res, middle]).buffer(0)
+
+def board_outline():
+    return rr(-BOARD_W / 2, -BOARD_H / 2, BOARD_W / 2, BOARD_H / 2, 4)
+
+# ---------------------------------------------------------------- stand (side profile, y = depth, z = height)
+BOARD_T = 2.4          # board thickness
+SLOT = BOARD_T + 0.45  # slot width (0.2 mm play each side after printing)
+LEAN = 15.0            # board leans back this many degrees from vertical
+FOOT_W = 24.0          # each foot is this wide (x)
+def stand_profile():
+    body = Polygon([(0, 0), (54, 0), (54, 6), (40, 15), (12, 15), (0, 6)])
+    body = body.buffer(1.0, join_style=1).buffer(-1.0, join_style=1)      # soften the corners
+    a = np.radians(LEAN)
+    # slot: bottom at z=4, centred at y=19, tilted back (towards +y) by LEAN
+    d = np.array([np.sin(a), np.cos(a)]); n = np.array([np.cos(a), -np.sin(a)])
+    c0 = np.array([19.0, 4.0])
+    slot = Polygon([c0 - n * SLOT / 2, c0 + n * SLOT / 2, c0 + n * SLOT / 2 + d * 30, c0 - n * SLOT / 2 + d * 30])
+    return body.difference(slot).buffer(0)
