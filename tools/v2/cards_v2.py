@@ -24,7 +24,17 @@ def ring_around(inner_ring, gap):
     a = outer_edge.buffer(gap, join_style=2); b = a.buffer(LW, join_style=2)
     return b.difference(a)
 
+V1_DEV_BACK = pickle.load(open(os.path.join(SPD, 'dev_shapes.pkl'), 'rb'))['knight']['logo']
 def back_resource(): return RES_LOGO
+def back_dev_v1(): return V1_DEV_BACK
+def back_costs_v1(): return V1.special_back()
+def back_trophy_v1():
+    """The original Longest Road / Largest Army back (hex ring + trophy outline), traced from the v2 trophy."""
+    t = G.trophy(17.5)
+    sil = Polygon(max(G.pieces(t), key=lambda p: p.area).exterior)
+    inside = sil.buffer(-LW, join_style=1)
+    cup = max(G.pieces(inside), key=lambda p: p.area)
+    return unary_union([RES_LOGO, centre(sil.difference(cup))]).buffer(0)
 def back_dev():
     """Two rings: the resource ring plus one 2 mm outside it. Every development icon sits inside the inner ring."""
     return unary_union([RING, ring_around(RING, 2.0)])
@@ -66,7 +76,7 @@ def fanned_cards(colours, w=8.6, h=12.0, spread=16.0, dx=5.0):
         if hx is not None: hx = affinity.rotate(affinity.translate(hx, (i - (n - 1) / 2) * dx, 0), -a, origin=((i - (n - 1) / 2) * dx, -h * 0.9))
         shapes.append((body, hx, col))
     for i, (body, hx, col) in enumerate(shapes):        # each card cut back where the cards in front of it sit
-        front = unary_union([Polygon(s[0].exterior) for s in shapes[i + 1:]]) if i + 1 < n else Polygon()
+        front = unary_union([Polygon(q.exterior) for s in shapes[i + 1:] for q in G.pieces(s[0])]) if i + 1 < n else Polygon()
         cut = front.buffer(G.GAP, join_style=1) if not front.is_empty else Polygon()
         out = merge(out, {WHITE: body.difference(cut)})
         if hx is not None: out = merge(out, {col: hx.difference(cut)})
@@ -76,21 +86,18 @@ def fanned_cards(colours, w=8.6, h=12.0, spread=16.0, dx=5.0):
 def knight():
     g, k = G.fit_zone(G.helmet(31.0)); return {PURPLE: g}, PURPLE
 def victory_point():
-    t = V1.dev_icon('vp', 25.1); g, k = G.fit_zone(t); return {ORANGE: g}, ORANGE
+    g, k = G.fill_zone(G.trophy(25.1)); return {ORANGE: g}, ORANGE
 def road_building():
-    r = G.road(15.5, 5.4)
-    a = place(affinity.rotate(r, 60, origin=(0, 0)), -2.6, 6.6); b = place(affinity.rotate(r, -60, origin=(0, 0)), -2.6, -6.6)
-    g = unary_union([a, b]); g = centre(g)
-    z, k = G.fill_zone(g); return {WHITE: z}, GREEN
+    z, k = G.fill_zone(G.road_and_hammer2()); return {WHITE: z}, GREEN
 def year_of_plenty():
-    f = fanned_cards([BRICK, WHEAT], w=11.0, h=15.4, spread=14.0, dx=6.4)
+    f = fanned_cards([None, None], w=11.0, h=15.4, spread=14.0, dx=6.4)
     allg = unary_union(list(f.values())); b = allg.bounds
     f = {k: place(v, -(b[0] + b[2]) / 2, -(b[1] + b[3]) / 2) for k, v in f.items()}
     _, s_ = G.fill_zone(unary_union(list(f.values())))
     return {k: affinity.scale(v, s_, s_, origin=(0, 0)) for k, v in f.items()}, GREEN
 def monopoly():
-    cr = G.crown(14.0)
-    f = fanned_cards([ORE, ORE, ORE], w=8.4, h=11.8, spread=16.0, dx=4.6)
+    cr = G.crown2(14.0)
+    f = fanned_cards([None, None, None], w=8.4, h=11.8, spread=16.0, dx=4.6)
     fb = unary_union(list(f.values())).bounds
     f = {k: place(v, -(fb[0] + fb[2]) / 2, -6.2 - (fb[1] + fb[3]) / 2) for k, v in f.items()}
     cr = place(cr, 0, 8.6)
@@ -105,7 +112,7 @@ def monopoly():
 # ---------------------------------------------------------------- table cards
 TROPHY_Y, TROPHY_H = -14.0, 9.5
 def trophies():
-    t = V1.dev_icon('vp', TROPHY_H).buffer(0.3, join_style=2, mitre_limit=10).buffer(-0.3, join_style=2, mitre_limit=10)
+    t = G.trophy(TROPHY_H)
     w = t.bounds[2] - t.bounds[0]
     return unary_union([place(t, -(w / 2 + 1.6), TROPHY_Y), place(t, w / 2 + 1.6, TROPHY_Y)])
 def longest_road():
@@ -141,12 +148,12 @@ def wheat_card(option):
     else: g = centre(G.wheat_v2(0.67, 3))
     return {WHEAT: g}, WHEAT
 def ore_card():
-    g, f = G.ore_final(); return {ORE: g}, ORE
+    g, f = G.ore4_final(); return {ORE: g}, ORE
 
 CARDS = {
-    'Knight': (knight, back_dev), 'Victory Point': (victory_point, back_dev), 'Road Building': (road_building, back_dev),
-    'Year of Plenty': (year_of_plenty, back_dev), 'Monopoly': (monopoly, back_dev),
-    'Building Costs': (building_costs, back_costs), 'Longest Road': (longest_road, back_trophy), 'Largest Army': (largest_army, back_trophy),
+    'Knight': (knight, back_dev_v1), 'Victory Point': (victory_point, back_dev_v1), 'Road Building': (road_building, back_dev_v1),
+    'Year of Plenty': (year_of_plenty, back_dev_v1), 'Monopoly': (monopoly, back_dev_v1),
+    'Building Costs': (building_costs, back_costs_v1), 'Longest Road': (longest_road, back_trophy_v1), 'Largest Army': (largest_army, back_trophy_v1),
     'Ore': (ore_card, back_resource),
 }
 def build(name):

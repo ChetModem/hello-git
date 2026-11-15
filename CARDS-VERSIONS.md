@@ -19,11 +19,13 @@ dots on Largest Army; progress-card icons are the same green as their corner hex
 
 ## v2 - in design (previews first, files after approval)
 Preview: `catan-cards-v2-preview.png`. Code: `tools/v2/`.
-- One road drawing everywhere (rounded bar, dashed centre line): Road Building (2 roads), Longest Road (5 in a chain), Building Costs (1).
-- One card drawing everywhere (white card, hexagon in the middle): Year of Plenty, Monopoly, Building Costs dev-card piece.
+- One road drawing everywhere (rounded bar, dashed centre line): Road Building, Longest Road (5 in a chain), Building Costs.
+- One card drawing everywhere (white card, black hexagon outline = a resource back with the colours swapped):
+  Year of Plenty, Monopoly, Building Costs dev-card piece.
+- Road Building: a road crossed with a hammer. Monopoly: crown over 3 cards. Both white, green only in the corners.
 - Knight helmet: no crest, rounded dome (Knight, Largest Army, legend).
-- Progress cards: icons in white and resource colours, green only in the corners. Monopoly redesigned (crown over 3 matching cards).
-- Ore: two peaks with black ridge lines, centred on its weight. Wheat: unchanged (v1).
-- Longest Road / Largest Army: trophies the same size and height on both.
-- Backs: undecided. Test file `catan-backs-showthrough-test.3mf` (Knight v2 + Victory Point on the v1 development back)
-  shows whether the white rings show through the icons. If they do, the v2 backs in the preview are used.
+- One trophy everywhere: filled handles, solid black star (Victory Point, Longest Road, Largest Army, their back).
+- Ore: Matterhorn-style shoulder on the big peak, plain smaller peak. Wheat: unchanged (v1).
+- Backs: the original designs. Development and table cards go to 0.6 mm with one black layer between the colour
+  and the back logo, so the logo cannot show through. Resource cards stay 0.5 mm (their icons are clear of the ring).
+- Test: `catan-backs-showthrough-test.3mf` - Knight and Victory Point at 0.5 mm (left) and 0.6 mm (right).

@@ -193,3 +193,101 @@ def fill_zone(g, zone=None):
     for _ in range(40):
         m = (lo + hi) / 2; (lo, hi) = (m, hi) if zone.contains(affinity.scale(g, m, m, origin=(0, 0))) else (lo, m)
     return affinity.scale(g, lo, lo, origin=(0, 0)), lo
+
+# ---------------------------------------------------------------- v2b additions
+def trophy(height):
+    """One trophy everywhere: solid cup with filled handles and a solid black star (as on Longest Road / Largest Army)."""
+    t = dev_icon('vp', height)
+    ps = sorted(pieces(t), key=lambda p: -p.area)
+    main = ps[0]
+    b = main.bounds; cx = (b[0] + b[2]) / 2
+    holes = [Polygon(h) for h in main.interiors]
+    star = [h for h in holes if abs(h.centroid.x - cx) < (b[2] - b[0]) * 0.2]          # the star sits in the middle of the cup
+    sil = Polygon(main.exterior)                                                       # handles and everything filled
+    g = sil.difference(unary_union(star)) if star else sil
+    g = g.buffer(0.3, join_style=2, mitre_limit=10).buffer(-0.3, join_style=2, mitre_limit=10)   # no black slivers
+    return centre(printable(g, w=0.6, speck=1.0))
+
+def crown2(w):
+    """Simple crown: three points (middle tallest) with round tips, a solid band, one black line between them."""
+    h = w * 0.7
+    band_h = h * 0.26
+    band = rr(-w / 2, -h / 2, w / 2, -h / 2 + band_h, min(0.6, w * 0.05))
+    y0 = -h / 2 + band_h + GAP
+    tips = [(-w / 2 + w * 0.06, h * 0.22), (0, h * 0.40), (w / 2 - w * 0.06, h * 0.22)]
+    valleys = [(-w * 0.22, y0 + h * 0.18), (w * 0.22, y0 + h * 0.18)]
+    pts = [(-w / 2, y0), tips[0], valleys[0], tips[1], valleys[1], tips[2], (w / 2, y0)]
+    body = Polygon(pts).buffer(0.35, join_style=1).buffer(-0.35, join_style=1)
+    balls = unary_union([Point(x, y + w * 0.035).buffer(w * 0.07, quad_segs=16) for x, y in tips])
+    return centre(unary_union([band, body, balls]))
+
+def hammer(length, width):
+    """Hammer pointing up along y: handle plus a head with a flat face on one side and a claw on the other."""
+    hw = width * 0.55
+    handle = rr(-hw / 2, -length / 2, hw / 2, length / 2 - width * 0.6, hw * 0.45)
+    head_w = width * 2.9; head_h = width * 1.15; yt = length / 2
+    face = rr(-head_w / 2, yt - head_h, -head_w * 0.05, yt, 0.4)                                   # striking side
+    claw = Polygon([(-head_w * 0.1, yt - head_h), (head_w / 2, yt - head_h * 0.15), (head_w / 2 - 0.2, yt), (-head_w * 0.1, yt)])
+    head = unary_union([face, claw]).buffer(0.3, join_style=1).buffer(-0.3, join_style=1)
+    return unary_union([handle, head])
+
+def road_and_hammer():
+    """Road and hammer crossed (road behind, hammer in front with a black gap where they cross)."""
+    r = affinity.rotate(road(26.0, 5.0), 45, origin=(0, 0))
+    hm = affinity.rotate(hammer(25.0, 3.2), 45, origin=(0, 0))
+    r = r.difference(hm.buffer(GAP, join_style=1))
+    return centre(printable(unary_union([r, hm]), w=0.6, speck=1.0))
+
+def ore_v3(f=0.80):
+    """Two peaks with a Matterhorn-style shoulder (a zag on the right flank) and ridge lines."""
+    P = lambda pts: affinity.scale(Polygon(pts), f, f, origin=(0, 0))
+    big = P([(-6.0, -10.0), (16.0, -10.0), (11.2, -0.5), (13.2, 1.6), (6.5, 13.5), (4.2, 11.0)])
+    small = P([(-16.0, -10.0), (-1.5, -10.0), (-5.2, -3.4), (-3.9, -1.8), (-8.9, 4.4)]).difference(big.buffer(GAP * 1.2))
+    soft = lambda p, r: p.buffer(-r, join_style=1).buffer(r, quad_segs=8)
+    big, small = soft(big, 0.45), soft(small, 0.35)
+    ridge_b = LineString([(6.6 * f, 11.2 * f), (8.2 * f, 3.0 * f), (7.4 * f, -10.5 * f)]).buffer(0.42, cap_style=2, join_style=2)
+    ridge_s = LineString([(-8.8 * f, 2.6 * f), (-7.7 * f, -10.5 * f)]).buffer(0.38, cap_style=2)
+    g = printable(unary_union([big.difference(ridge_b), small.difference(ridge_s)]), w=0.6, speck=1.0)
+    c = g.centroid
+    return affinity.translate(g, -c.x, -(g.bounds[1] + g.bounds[3]) / 2)
+
+def ore3_final():
+    z = safe_zone()
+    for f in np.arange(0.85, 0.6, -0.01):
+        g = ore_v3(f)
+        if z.contains(g) and closest(g) >= GAP - 0.01: return g, f
+
+def ore_v4(f=0.80):
+    """Matterhorn-style: big peak with a summit leaning right and one shoulder on the right flank; plain small peak.
+    Flat silhouettes, no ridge lines."""
+    P = lambda pts: affinity.scale(Polygon(pts), f, f, origin=(0, 0))
+    big = P([(-7.0, -10.0), (17.0, -10.0), (11.6, -0.8), (13.4, 1.0), (6.2, 13.8), (5.0, 13.6), (2.0, 7.0)])
+    small = P([(-16.0, -10.0), (-2.5, -10.0), (-8.6, 3.2)]).difference(big.buffer(GAP * 1.1))
+    soft = lambda p, r: p.buffer(-r, join_style=1).buffer(r, quad_segs=8)
+    g = printable(unary_union([soft(big, 0.45), soft(small, 0.4)]), w=0.6, speck=1.0)
+    c = g.centroid
+    return affinity.translate(g, -c.x, -(g.bounds[1] + g.bounds[3]) / 2)
+
+def ore4_final():
+    z = safe_zone()
+    for f in np.arange(0.9, 0.6, -0.01):
+        g = ore_v4(f)
+        if z.contains(g) and closest(g) >= GAP - 0.01: return g, f
+
+def hammer2(length, width):
+    """Hammer pointing up: handle, square head at right angles to it (flat face one side, short claw the other)."""
+    hw = width * 0.6
+    handle = rr(-hw / 2, -length / 2, hw / 2, length / 2 - width * 0.4, hw * 0.45)
+    hh = width * 1.25; hl = width * 3.0; yt = length / 2
+    face = rr(-hl * 0.5, yt - hh, hl * 0.12, yt, 0.35)
+    claw = Polygon([(hl * 0.1, yt - hh * 0.75), (hl * 0.5, yt - hh * 0.25), (hl * 0.46, yt - hh * 0.05), (hl * 0.1, yt)])
+    return unary_union([handle, face, claw]).buffer(0.25, join_style=1).buffer(-0.25, join_style=1)
+
+def road_and_hammer2():
+    L, W = 24.0, 5.2
+    body = rr(-L / 2, -W / 2, L / 2, W / 2, min(0.6, W * 0.25)); dw = max(GAP, round(W * 0.24, 2))
+    dashes = unary_union([box(sx * L * 0.30 - 1.9, -dw / 2, sx * L * 0.30 + 1.9, dw / 2) for sx in (-1, 1)])   # one dash per half, clear of the crossing
+    r = affinity.rotate(body.difference(dashes), 45, origin=(0, 0))          # road along /
+    hm = affinity.rotate(hammer2(24.0, 3.2), 45, origin=(0, 0))      # hammer handle along \ (head top-left)
+    r = r.difference(hm.buffer(GAP, join_style=1))
+    return centre(printable(unary_union([r, hm]), w=0.6, speck=1.0))
