@@ -913,3 +913,85 @@ def to_weight(fn, target=270.0):
         best = g
         if g.area <= target: return g
     return best
+
+# ---------------------------------------------------------------- tree style variations
+def pine_jagged(s=1.0):
+    """Pine with jagged tiers: each tier's lower edge has downward points like branch tips."""
+    tiers = []
+    for (w, y0, h) in ((22.0, -6.0, 9.5), (17.0, 0.2, 8.5), (11.5, 5.6, 8.0)):
+        w *= s; y0 *= s; h *= s
+        n = 4 if w > 15 * s else 3
+        bottom = []
+        for i in range(n + 1):
+            x = -w / 2 + i * w / n
+            bottom.append((x, y0))
+            if i < n: bottom.append((x + w / (2 * n), y0 + h * 0.18))
+        t = Polygon(bottom + [(0, y0 + h)]).buffer(-0.45, join_style=1).buffer(0.9, join_style=1).buffer(-0.45, join_style=1)   # rounded, printable tips
+        tiers.append(t)
+    out = []
+    for i, t in enumerate(tiers):
+        above = unary_union(tiers[i + 1:]) if i + 1 < len(tiers) else Polygon()
+        out.append(t.difference(above.buffer(GAP, join_style=1)) if not above.is_empty else t)
+    trunk = rr(-1.8 * s, -12.0 * s, 1.8 * s, -6.0 * s + 1.0 * s - GAP, 0.3).difference(unary_union(out).buffer(GAP))
+    return centre(unary_union(out + [trunk]))
+
+def pine_round(s=1.0):
+    """Softer pine: tiers with curved lower edges and rounded tips."""
+    tiers = []
+    for (w, y0, h) in ((22.0, -6.0, 9.5), (17.0, 0.2, 8.5), (11.5, 5.6, 8.0)):
+        w *= s; y0 *= s; h *= s
+        pts = [(0, y0 + h)] + [(w / 2 * np.cos(t), y0 + h * 0.12 * (1 - np.sin(t))) for t in np.linspace(0, np.pi, 24)]
+        tiers.append(Polygon(pts).buffer(0.9 * s, join_style=1).buffer(-0.9 * s, join_style=1))
+    out = []
+    for i, t in enumerate(tiers):
+        above = unary_union(tiers[i + 1:]) if i + 1 < len(tiers) else Polygon()
+        out.append(t.difference(above.buffer(GAP, join_style=1)) if not above.is_empty else t)
+    trunk = rr(-1.8 * s, -12.0 * s, 1.8 * s, -6.0 * s - GAP, 0.4)
+    return centre(unary_union(out + [trunk]))
+
+def conifer_tall(s=1.0):
+    """Tall, slim conifer: five narrow tiers."""
+    tiers = []
+    for i in range(5):
+        w = (13.0 - i * 2.2) * s; y0 = (-8.0 + i * 4.4) * s; h = 7.0 * s
+        tiers.append(Polygon([(-w / 2, y0), (w / 2, y0), (0, y0 + h)]).buffer(0.4, join_style=1).buffer(-0.4, join_style=1))
+    out = []
+    for i, t in enumerate(tiers):
+        above = unary_union(tiers[i + 1:]) if i + 1 < len(tiers) else Polygon()
+        out.append(t.difference(above.buffer(GAP, join_style=1)) if not above.is_empty else t)
+    trunk = rr(-1.5 * s, -13.0 * s, 1.5 * s, -8.0 * s - GAP, 0.3)
+    return centre(unary_union(out + [trunk]))
+
+def oak(s=1.0):
+    """Broadleaf tree with branches showing: canopy of rounded lobes, black branch lines forking from the trunk."""
+    c = unary_union([Point(x * s, y * s).buffer(r * s, quad_segs=48) for x, y, r in
+                     ((0, 7.0, 6.6), (-6.4, 3.4, 5.2), (6.4, 3.4, 5.2), (-3.6, 0.0, 4.8), (3.6, 0.0, 4.8), (0, 2.8, 5.0))])
+    c = c.buffer(0.4, join_style=1).buffer(-0.4, join_style=1)
+    branches = unary_union([LineString(p).buffer(GAP / 2, cap_style=1, join_style=1) for p in
+                            [[(0, -4.6 * s), (0, 3.2 * s), (-3.6 * s, 7.4 * s)], [(0, 1.0 * s), (4.4 * s, 4.8 * s)], [(0, 3.2 * s), (2.2 * s, 8.6 * s)]]])
+    trunk = Polygon([(-2.2 * s, -12.0 * s), (2.2 * s, -12.0 * s), (1.4 * s, -3.6 * s), (-1.4 * s, -3.6 * s)])
+    g = unary_union([c.difference(branches), trunk.difference(c.buffer(GAP))])
+    return centre(printable(g, w=0.6, speck=0.8))
+
+def stump(s=1.0, axe=False):
+    """Tree stump: cut top showing growth rings, flared roots, bark lines down the side; optional axe in the top."""
+    top_y = 3.0 * s; w = 16.0 * s
+    top = affinity.translate(affinity.scale(Point(0, 0).buffer(1, quad_segs=64), w / 2, 2.8 * s), 0, top_y)
+    body = Polygon([(-w / 2, top_y), (w / 2, top_y), (w / 2 + 0.6 * s, -6.0 * s), (-w / 2 - 0.6 * s, -6.0 * s)])
+    roots = unary_union([Polygon([(-w / 2 - 0.6 * s, -3.0 * s), (-w / 2 - 4.2 * s, -8.0 * s), (-w / 2 + 2.0 * s, -8.0 * s)]),
+                         Polygon([(w / 2 + 0.6 * s, -3.0 * s), (w / 2 + 4.2 * s, -8.0 * s), (w / 2 - 2.0 * s, -8.0 * s)]),
+                         Polygon([(-2.0 * s, -6.0 * s), (2.0 * s, -6.0 * s), (0, -8.6 * s)])])
+    side = unary_union([body, roots]).buffer(0.5, join_style=1).buffer(-0.5, join_style=1).difference(top.buffer(GAP))
+    bark = unary_union([LineString([(x * s, top_y - 3.4 * s), (x * s * 1.04, -5.0 * s)]).buffer(GAP / 2, cap_style=1) for x in (-4.5, 0.0, 4.5)])
+    side = side.difference(bark)
+    rings = top
+    for k in (0.66, 0.34):                                   # two clean growth rings, centred on the cut
+        e = affinity.translate(affinity.scale(Point(0, 0).buffer(1, quad_segs=64), w / 2 * k, 2.8 * s * k), 0, top_y)
+        rings = rings.difference(e.exterior.buffer(GAP / 2))
+    parts = [side, rings]
+    if axe:
+        head = Polygon([(2.2 * s, top_y + 0.6 * s), (7.4 * s, top_y + 0.6 * s), (8.2 * s, top_y + 5.2 * s), (2.8 * s, top_y + 3.4 * s)]).buffer(0.3, join_style=1).buffer(-0.3, join_style=1)
+        handle = LineString([(4.0 * s, top_y + 2.6 * s), (-6.0 * s, top_y + 11.0 * s)]).buffer(0.9 * s, cap_style=1)
+        axe_g = unary_union([head, handle])
+        parts = [p.difference(axe_g.buffer(GAP, join_style=1)) for p in parts] + [axe_g]
+    return centre(printable(unary_union(parts), w=0.6, speck=0.8))
