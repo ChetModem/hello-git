@@ -876,3 +876,40 @@ def log_side(s=1.0):
     grain = unary_union([LineString([(-L * 0.18, y), (L * 0.40, y)]).buffer(GAP / 2, cap_style=1) for y in (-R * 0.35, R * 0.25)])
     body = unary_union([body, stub]).difference(grain)
     return centre(printable(unary_union([body, end]), w=0.6, speck=0.5))
+
+# ---------------------------------------------------------------- more flat wood options
+def leafy_tree(s=1.0):
+    """Broadleaf tree: round canopy made of overlapping circles, trunk below with a black gap."""
+    c = unary_union([Point(x * s, y * s).buffer(r * s, quad_segs=48) for x, y, r in
+                     ((0, 6.5, 7.2), (-6.0, 2.6, 5.4), (6.0, 2.6, 5.4), (-2.8, 0.4, 5.0), (2.8, 0.4, 5.0))])
+    c = c.buffer(0.4, join_style=1).buffer(-0.4, join_style=1)
+    trunk = Polygon([(-1.9 * s, -12.0 * s), (1.9 * s, -12.0 * s), (1.3 * s, -3.0 * s), (-1.3 * s, -3.0 * s)]).difference(c.buffer(GAP))
+    return centre(unary_union([c, trunk]))
+
+def stacked_logs_side(s=1.0):
+    """Three logs seen side-on, two below and one on top: each with its cut end (growth ring) on the left."""
+    def one(L, R):
+        body = rr(-L / 2, -R, L / 2, R, R * 0.9)
+        end = affinity.translate(affinity.scale(Point(0, 0).buffer(1, quad_segs=48), R * 0.55, R), -L / 2 + R * 0.55, 0)
+        ring = affinity.translate(affinity.scale(Point(0, 0).buffer(1, quad_segs=48), R * 0.25, R * 0.48), -L / 2 + R * 0.6, 0)
+        return unary_union([body.difference(end.buffer(GAP)), end.difference(ring.difference(ring.buffer(-GAP)))])
+    L, R = 22.0 * s, 3.4 * s
+    a = place(one(L, R), 0, R + GAP / 2); b = place(one(L, R), 0, -(R + GAP / 2))
+    c = place(one(L * 0.8, R), L * 0.05, 3 * R + GAP * 1.5)
+    return centre(unary_union([a, b, c]))
+
+def two_pines(s=1.0):
+    """A small stand of forest: a tall pine with a shorter one behind it to the right."""
+    big = place(pine_tree(1.0 * s), -3.2 * s, 0)
+    small = place(pine_tree(0.72 * s), 6.8 * s, -4.2 * s)                  # built at its own size: gaps stay 0.7 mm
+    return centre(unary_union([big, small.difference(big.buffer(GAP, join_style=1))]))
+
+def to_weight(fn, target=270.0):
+    """fn(s) scaled (shapes only, gaps stay 0.7 mm) to about `target` mm2 of colour, or the largest that fits the zone."""
+    z = safe_zone(); best = None
+    for s_ in np.arange(1.6, 0.5, -0.01):
+        g = fn(s_)
+        if not z.contains(g) or closest(g) < GAP - 0.01: continue
+        best = g
+        if g.area <= target: return g
+    return best
