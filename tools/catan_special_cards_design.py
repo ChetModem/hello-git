@@ -133,8 +133,8 @@ def p_city():
     return Polygon([(-3.6, -2.8), (3.6, -2.8), (3.6, 0.6), (0.2, 0.6), (0.2, 1.6), (-1.7, 3.4), (-3.6, 1.6)])
 
 def p_devcard():
-    card = rr(-2.3, -3.2, 2.3, 3.2, 0.5)
-    hexo = Polygon([(1.3 * np.cos(np.radians(a)), 1.3 * np.sin(np.radians(a))) for a in range(30, 390, 60)])
+    card = rr(-2.5, -3.3, 2.5, 3.3, 0.6)
+    hexo = Polygon([(1.1 * np.cos(np.radians(a)), 1.1 * np.sin(np.radians(a))) for a in range(30, 390, 60)])
     return card.difference(hexo.buffer(LINE / 2).difference(hexo.buffer(-LINE / 2)))
 
 # ---------------------------------------------------------------- dev icons at any size, gaps kept printable
@@ -146,6 +146,21 @@ def dev_icon(name, height):
     p = affinity.scale(dev_icons.solid(name, k), -k, k, origin=(0, 0))   # stored as printed (face down) -> mirror to the face view
     b = p.bounds
     return affinity.translate(p, -(b[0] + b[2]) / 2, -(b[1] + b[3]) / 2)
+
+def knight_helmet(height):
+    """Knight helmet that keeps its crest at small sizes: the crest is thickened to at least 0.7 mm
+    while staying 0.7 mm clear of the helmet."""
+    g = dev_icon('knight', height)
+    ps = sorted((list(g.geoms) if hasattr(g, 'geoms') else [g]), key=lambda p: -p.area)
+    helmet, small = ps[0], ps[1:]
+    crest = unary_union(small)
+    if not crest.is_empty:
+        t = 0.0
+        while t < 0.4:
+            c2 = crest.buffer(t, join_style=1).difference(helmet.buffer(GAP))
+            if not printable(c2, w=0.7, speck=0.5).is_empty: crest = c2; break
+            t += 0.05
+    return unary_union([helmet, crest])
 
 def hexagon(cx, cy, w=6.06):
     r = w / np.sqrt(3)
@@ -165,18 +180,32 @@ def printable(g, w=0.6, speck=2.0):
 # ---------------------------------------------------------------- cards: {colour slot: shape}
 RES = {'brick': (3, m_brick), 'wood': (4, m_wood), 'wheat': (5, m_wheat), 'sheep': (2, m_sheep), 'ore': (6, m_ore)}
 
+MINI = 9.5      # resource icon size on the Building Costs card (mm)
+MULT_CAP = 4.3  # height of the "x3" / "x2" numbers
 def building_costs():
-    rows = [(p_road, ['brick', 'wood']), (p_settlement, ['brick', 'wood', 'wheat', 'sheep']),
-            (p_city, ['ore', 'ore', 'ore', 'wheat', 'wheat']), (p_devcard, ['ore', 'wheat', 'sheep'])]
+    """No corner hexes on this card: the space goes to bigger icons. Repeated resources are shown
+    once with a multiplier (x3, x2) so every row fits on one line."""
+    import minis2 as M
+    rows = [(p_road, [('brick', 1), ('wood', 1)]),
+            (p_settlement, [('brick', 1), ('wood', 1), ('wheat', 1), ('sheep', 1)]),
+            (p_city, [('ore', 3), ('wheat', 2)]),
+            (p_devcard, [('ore', 1), ('wheat', 1), ('sheep', 1)])]
+    icons = {n: M.mini(n, MINI) for n in ('brick', 'wood', 'wheat', 'sheep', 'ore')}
+    slot = {'brick': 3, 'wood': 4, 'wheat': 5, 'sheep': 2, 'ore': 6}
     out = {2: [], 3: [], 4: [], 5: [], 6: []}
     for i, (piece, res) in enumerate(rows):
-        y = 17.25 - i * 11.5
-        out[2].append(place(piece(), -19.5, y))
-        for j, r in enumerate(res):
-            slot, f = RES[r]; out[slot].append(place(f(), -9.6 + j * 7.4, y))
-    out = {k: printable(unary_union(v), speck=0) for k, v in out.items() if v}
-    out[2] = unary_union([out[2]] + [hexagon(*c) for c in CORNERS])
-    return out
+        y = 24.0 - i * 16.0
+        pc = affinity.scale(piece(), 1.25, 1.25, origin=(0, 0)); b = pc.bounds
+        out[2].append(place(pc, -18.6 - (b[0] + b[2]) / 2, y - (b[1] + b[3]) / 2))
+        x = -13.0
+        for r, n in res:
+            g = icons[r]; b = g.bounds
+            out[slot[r]].append(place(g, x - b[0], y - (b[1] + b[3]) / 2)); x += (b[2] - b[0]) + 1.0
+            if n > 1:
+                t, tw = text('\u00d7' + str(n), MULT_CAP, True); tb = t.bounds
+                out[slot[r]].append(place(t, x + 0.2 - tb[0], y - (tb[1] + tb[3]) / 2)); x += (tb[2] - tb[0]) + 0.2 + 1.6
+        assert x - 1.0 <= 23.6, f'row {i} too wide: ends at {x - 1.0:.1f}'
+    return {k: printable(unary_union(v), speck=0) for k, v in out.items() if v}
 
 def trophies(y, h=12.5):
     t = dev_icon('vp', h); w = t.bounds[2] - t.bounds[0]
@@ -195,12 +224,15 @@ def longest_road():
         roads.append(stadium(a0, a1, wd)); x, y = x + dx, y + dy
     r = unary_union(roads); b = r.bounds
     r = affinity.translate(r, -(b[0] + b[2]) / 2, 9.0 - (b[1] + b[3]) / 2)
-    return {7: r, 9: unary_union([printable(trophies(-11.0))] + [hexagon(*c) for c in CORNERS])}
+    return {6: r, 9: unary_union([printable(trophies(-11.0))] + [hexagon(*c) for c in CORNERS])}
 
 def largest_army():
-    h = dev_icon('knight', 13.5); w = h.bounds[2] - h.bounds[0]
-    helms = unary_union([place(h, dx * (w + 1.6), 9.5) for dx in (-1, 0, 1)])
-    return {8: printable(helms), 9: unary_union([printable(trophies(-11.0))] + [hexagon(*c) for c in CORNERS])}
+    big = knight_helmet(24.0); small = knight_helmet(17.0)      # leader in the middle, two either side
+    base = -3.0                                                           # all three stand on the same line
+    wb = big.bounds[2] - big.bounds[0]; ws = small.bounds[2] - small.bounds[0]; gap = 1.4
+    helms = unary_union([place(big, 0, base - big.bounds[1])] +
+                        [place(small, sd * (wb / 2 + gap + ws / 2), base - small.bounds[1]) for sd in (-1, 1)])
+    return {8: printable(helms, speck=0.8), 9: unary_union([printable(trophies(-15.5))] + [hexagon(*c) for c in CORNERS])}
 
 CARDS = {'building-costs': (building_costs, 4), 'longest-road': (longest_road, 1), 'largest-army': (largest_army, 1)}
 
@@ -226,7 +258,7 @@ BOARD_W = 240.0; MARGIN = 8.0; ICON_COL = 22.0; COL_GAP = 8.0
 BOARD_H = None
 
 def _icon(key):
-    if key == 'lr': return 7, _road_chain(5.4, 1.8)
+    if key == 'lr': return 6, _road_chain(5.4, 1.8)        # grey like the stone roads
     if key == 'la': return 8, largest_army_small()
     return {'knight': 8, 'vp': 9, 'rb': 7, 'yop': 7, 'mono': 7}[key], dev_icon(key, ICON_H)
 
@@ -268,9 +300,11 @@ def legend():
             for g in gs: add(slot, place(g, x0, Y0 + y))
     yf = -BOARD_H / 2 + MARGIN + fh
     add(2, box(-BOARD_W / 2 + MARGIN, yf + 3.15, BOARD_W / 2 - MARGIN, yf + 3.85))            # divider line
-    for j, r in enumerate(['ore', 'wheat', 'sheep']):
-        slot, f = RES[r]; add(slot, place(f(), -BOARD_W / 2 + MARGIN + 3.6 + j * 7.4, yf - fh / 2))
-    add(2, place(p_devcard(), -BOARD_W / 2 + MARGIN + 3.6 + 3 * 7.4 + 0.5, yf - fh / 2))
+    import minis2 as M
+    xx = -BOARD_W / 2 + MARGIN
+    for r, sl in (('ore', 6), ('wheat', 5), ('sheep', 2)):
+        g = M.mini(r, 7.4); b = g.bounds; add(sl, place(g, xx - b[0], yf - fh / 2 - (b[1] + b[3]) / 2)); xx += b[2] - b[0] + 1.2
+    g = affinity.scale(p_devcard(), 1.15, 1.15, origin=(0, 0)); b = g.bounds; add(2, place(g, xx - b[0], yf - fh / 2 - (b[1] + b[3]) / 2))
     y = yf
     for ln in flines:
         y -= BODY_CAP; t, _ = text(ln, BODY_CAP, True); add(2, place(t.buffer(EMBOLDEN, join_style=1), -BOARD_W / 2 + MARGIN + fx, y)); y -= LEAD

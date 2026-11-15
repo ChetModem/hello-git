@@ -36,12 +36,12 @@ def template_mesh(cid, dz=0.25):
 
 FACE, BACKING = (0.0, 0.2), (0.2, 0.3)   # face colour = first (0.2 mm) layer, then one same-colour 0.1 mm layer
 
-def card_parts(shapes, corner_slot):
+def card_parts(shapes, corner_slot, corners=True):
     """shapes: {slot: polygon in face view}. Returns list of (name, extruder, mesh, extra metadata)."""
     parts = [('Card', 1, template_mesh(11), {})]
-    for k, cid in enumerate((12, 13, 14, 15)):                                 # corner hexes, face + backing
+    for k, cid in enumerate((12, 13, 14, 15) if corners else ()):            # corner hexes, face + backing
         parts.append((f'Corner hex {k + 1}', corner_slot, template_mesh(cid), {}))
-    for k, cid in enumerate((18, 19, 20, 21)):
+    for k, cid in enumerate((18, 19, 20, 21) if corners else ()):
         parts.append((f'Corner hex backing {k + 1}', corner_slot, template_mesh(cid), {}))
     for slot, g in sorted(shapes.items()):
         g = mirror(g)
@@ -127,7 +127,7 @@ if __name__ == '__main__':
         hexes = D.unary_union([D.hexagon(*c) for c in D.CORNERS]).buffer(0.05)
         sh = {k: v.difference(hexes).buffer(0) for k, v in sh.items()}
         sh = {k: v for k, v in sh.items() if v.area > 0.05}
-        cards.append(dict(name=name, plate=pl, x=x, y=y, parts=card_parts(sh, corner)))
+        cards.append(dict(name=name, plate=pl, x=x, y=y, parts=card_parts(sh, corner, corners=not name.startswith('Building'))))
     write_project(f'{REPO}/catan-special-cards-6.3mf', cards, ['Building Costs x4 (6 colours)', 'Longest Road + Largest Army (5 colours)'])
     print('cards written')
     # ---------------- legend board (plate 1) + two stand feet (plate 2)
