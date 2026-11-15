@@ -36,7 +36,7 @@ def template_mesh(cid, dz=0.25):
 
 FACE, BACKING = (0.0, 0.2), (0.2, 0.3)   # face colour = first (0.2 mm) layer, then one same-colour 0.1 mm layer
 
-def card_parts(shapes, corner_slot, corners=True):
+def card_parts(shapes, corner_slot, corners=True, back=None):
     """shapes: {slot: polygon in face view}. Returns list of (name, extruder, mesh, extra metadata)."""
     parts = [('Card', 1, template_mesh(11), {})]
     for k, cid in enumerate((12, 13, 14, 15) if corners else ()):            # corner hexes, face + backing
@@ -47,7 +47,7 @@ def card_parts(shapes, corner_slot, corners=True):
         g = mirror(g)
         parts.append((f'Icon colour {slot}', slot, extrude(g, *FACE), {}))
         parts.append((f'Icon backing colour {slot}', slot, extrude(g, *BACKING), {}))
-    parts.append(('Rear logo (special)', 2, extrude(mirror(D.special_back()), 0.3, 0.5), {'top_surface_pattern': 'monotonicline'}))
+    parts.append(('Rear logo (special)', 2, extrude(mirror(back if back is not None else D.special_back()), 0.3, 0.5), {'top_surface_pattern': 'monotonicline'}))
     return parts
 
 def write_project(out, objects, plate_names):
@@ -127,7 +127,8 @@ if __name__ == '__main__':
         hexes = D.unary_union([D.hexagon(*c) for c in D.CORNERS]).buffer(0.05)
         sh = {k: v.difference(hexes).buffer(0) for k, v in sh.items()}
         sh = {k: v for k, v in sh.items() if v.area > 0.05}
-        cards.append(dict(name=name, plate=pl, x=x, y=y, parts=card_parts(sh, corner, corners=not name.startswith('Building'))))
+        cards.append(dict(name=name, plate=pl, x=x, y=y, parts=card_parts(sh, corner, corners=not name.startswith('Building'),
+                                                                         back=None if name.startswith('Building') else D.vp_back())))
     write_project(f'{REPO}/catan-special-cards-6.3mf', cards, ['Building Costs x4 (6 colours)', 'Longest Road + Largest Army (4 colours)'])
     print('cards written')
     # ---------------- legend board (plate 1) + two stand feet (plate 2)

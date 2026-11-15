@@ -348,6 +348,23 @@ def special_back():
         k = 1 + (d - spacing) / 20.0; inner = affinity.scale(inner, k, k, origin=(0, 0))
     return unary_union([res, inner]).buffer(0)
 
+def vp_back():
+    """Back for Longest Road / Largest Army: the normal hex ring with a trophy outline inside,
+    traced with the same line width as the ring (narrow parts like the stem simply fill in)."""
+    res = pickle.load(open(os.path.join(SP, 'logo.pkl'), 'rb'))
+    ring = max(res.geoms, key=lambda g: g.area) if hasattr(res, 'geoms') else res
+    hole = Polygon(ring.interiors[0])
+    lw = ((ring.bounds[2] - ring.bounds[0]) - (hole.bounds[2] - hole.bounds[0])) / 2        # across the flat sides
+    t = dev_icon('vp', 17.5)
+    filled = unary_union([Polygon(g.exterior) for g in (t.geoms if hasattr(t, 'geoms') else [t])]).buffer(0)
+    filled = filled.buffer(0.4, join_style=1).buffer(-0.4, join_style=1)
+    inside = filled.buffer(-lw, join_style=1)
+    cup = max((inside.geoms if hasattr(inside, 'geoms') else [inside]), key=lambda g: g.area)   # keep only the cup hollow:
+    outline = filled.difference(cup)                                                            # stem and base stay solid (no X at the neck)
+    b = outline.bounds; outline = affinity.translate(outline, -(b[0] + b[2]) / 2, -(b[1] + b[3]) / 2)
+    vp_back.line_width = lw
+    return unary_union([res, outline]).buffer(0)
+
 def board_outline():
     return rr(-BOARD_W / 2, -BOARD_H / 2, BOARD_W / 2, BOARD_H / 2, 4)
 
