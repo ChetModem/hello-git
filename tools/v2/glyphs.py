@@ -1044,3 +1044,108 @@ def log_bundle(s=1.0, n=3, tie=True):
     return centre(printable(g, w=0.6, speck=0.8))
 def log_bundle_tied(s=1.0): return log_bundle(s, 3, True)
 def log_pair(s=1.0): return log_bundle(s, 2, False)
+
+# ---------------------------------------------------------------- final-set work: ore fix, wheat options, sheep options
+def ore_rocks2():
+    """Rocks with the facets kept to the big rock; the small rock gets one facet line (no letter-like shapes)."""
+    big = Polygon([(-5.5, -8.0), (8.5, -8.0), (11.0, -1.5), (6.5, 7.5), (-1.5, 9.0), (-7.5, 1.5)])
+    small = Polygon([(-15.0, -8.0), (-7.0, -8.0), (-6.4, -3.0), (-9.5, 1.5), (-14.0, -1.0)]).difference(big.buffer(GAP * 1.2))
+    facets_b = unary_union([LineString(p).buffer(0.4, cap_style=2, join_style=2) for p in
+                            [[(-1.5, 9.0), (1.0, 1.0), (6.5, 7.5)], [(1.0, 1.0), (2.5, -8.2)], [(1.0, 1.0), (-7.5, 1.5)], [(1.0, 1.0), (11.0, -1.5)]]])
+    facet_s = LineString([(-9.5, 1.5), (-10.6, -8.2)]).buffer(0.38, cap_style=2)
+    soft = lambda p, r: p.buffer(-r, join_style=1).buffer(r, quad_segs=8)
+    return printable(unary_union([soft(big, 0.35).difference(facets_b), soft(small, 0.3).difference(facet_s)]), w=0.6, speck=1.0)
+
+def optical(g):
+    """Centre on the visual weight vertically (area centroid), on the outline horizontally."""
+    b = g.bounds; c = g.centroid
+    return affinity.translate(g, -(b[0] + b[2]) / 2, -c.y)
+
+def wheat_ear4():
+    """Single ear, 4 rows: fatter grains, thicker stalk (largest that fits, gaps >= 0.65 mm)."""
+    z = safe_zone()
+    for k in np.arange(1.4, 0.8, -0.01):
+        g = wheat_one_ear(k, rows=4)
+        if z.contains(g) and closest(g) >= 0.64: return g
+
+def wheat_two_ears():
+    """Two ears leaning apart from a shared base (a V), stalks meeting at the bottom."""
+    best = None
+    for k in np.arange(1.2, 0.6, -0.01):
+        e = wheat_one_ear(k, rows=5)
+        a = affinity.rotate(e, 14, origin=(0, e.bounds[1])); b2 = affinity.rotate(e, -14, origin=(0, e.bounds[1]))
+        a = place(a, -2.2 * k, 0); b2 = place(b2, 2.2 * k, 0)
+        g = centre(unary_union([a, b2.difference(a.buffer(GAP))]))
+        if safe_zone().contains(g) and closest(g) >= 0.64: return g
+    return best
+
+def wheat_three_bold():
+    """The v1 three-ear wheat with fewer, fatter grains (5 rows) and thicker stalks, at the largest size that fits."""
+    z = safe_zone()
+    for k in np.arange(0.8, 0.55, -0.005):
+        parts = []
+        c, wc = I.ear(0.0, (16.2 * k, 11.4 * k), 2.2 * k, 5, 12.5 * k, 8.0 * k, 0.55, 4.9 * k, 3.6 * k)
+        parts += c + [stadium((0.0, -6.8 * k), (0.0, -17.2 * k), 1.6 * k)]
+        for cx in (-10.4 * k, 10.4 * k):
+            e, ws = I.ear(cx, (8.6 * k, 5.4 * k), 1.9 * k, 5, 6.1 * k, 2.8 * k, 0.5, 4.2 * k, 3.0 * k)
+            parts += e + [stadium((cx, -9.4 * k), (cx, -17.2 * k), 1.4 * k)]
+        g = centre(unary_union(parts))
+        if z.contains(g) and closest(g) >= 0.6: wheat_three_bold.w = (wc, ws); return g
+
+def _cloud(cx, cy, rx, ry, n, r):
+    pts = [(cx + rx * np.cos(t), cy + ry * np.sin(t)) for t in np.linspace(0, 2 * np.pi, n, endpoint=False)]
+    return unary_union([Point(x, y).buffer(r, quad_segs=32) for x, y in pts] + [affinity.translate(affinity.scale(Point(0, 0).buffer(1, quad_segs=48), rx, ry), cx, cy)])
+
+def sheep_refined(s=1.0):
+    """Current sheep tidied: an even fleece of small lobes, a solid head set into it with a clean black gap,
+    leaf-shaped ears, eyes, and two legs."""
+    body = _cloud(0, 1.2 * s, 9.4 * s, 8.4 * s, 12, 3.0 * s).buffer(0.5, join_style=1).buffer(-0.5, join_style=1)
+    head = affinity.translate(affinity.scale(Point(0, 0).buffer(1, quad_segs=48), 4.4 * s, 5.8 * s), 0, -1.6 * s)
+    head = head.union(affinity.translate(affinity.scale(Point(0, 0).buffer(1, quad_segs=48), 3.4 * s, 2.6 * s), 0, -5.2 * s))   # muzzle
+    ears = unary_union([affinity.rotate(affinity.translate(affinity.scale(Point(0, 0).buffer(1, quad_segs=32), 3.0 * s, 1.3 * s), sd * 6.6 * s, 2.4 * s), -sd * 18, origin=(sd * 6.6 * s, 2.4 * s)) for sd in (-1, 1)])
+    eyes = unary_union([Point(sd * 1.8 * s, 0.4 * s).buffer(max(0.55, 0.62 * s)) for sd in (-1, 1)])
+    nose = affinity.translate(affinity.scale(Point(0, 0).buffer(1, quad_segs=24), max(0.8, 1.1 * s), max(0.45, 0.55 * s)), 0, -5.4 * s)
+    head = head.difference(eyes).difference(nose)
+    face_cut = unary_union([head, ears]).buffer(GAP, join_style=1)
+    legs = unary_union([rr(sd * 3.4 * s - 1.5 * s, -12.5 * s, sd * 3.4 * s + 1.5 * s, -7.0 * s, 0.7 * s) for sd in (-1, 1)])
+    body = body.difference(face_cut)
+    ears = ears.difference(head.buffer(GAP))
+    legs = legs.difference(body.buffer(GAP)).difference(head.buffer(GAP))
+    return centre(printable(unary_union([body, head, ears, legs]), w=0.6, speck=0.6))
+
+def sheep_side(s=1.0):
+    """Sheep side-on: long fleece body, head to the right with an ear and an eye, four legs."""
+    body = _cloud(-1.2 * s, 1.0 * s, 9.0 * s, 5.6 * s, 13, 2.6 * s).buffer(0.5, join_style=1).buffer(-0.5, join_style=1)
+    head = affinity.rotate(affinity.translate(affinity.scale(Point(0, 0).buffer(1, quad_segs=48), 4.0 * s, 2.7 * s), 10.0 * s, 2.0 * s), -28, origin=(10.0 * s, 2.0 * s))
+    ear = affinity.rotate(affinity.translate(affinity.scale(Point(0, 0).buffer(1, quad_segs=32), 2.6 * s, 1.1 * s), 8.4 * s, 5.0 * s), 30, origin=(8.4 * s, 5.0 * s))
+    eye = Point(10.6 * s, 2.6 * s).buffer(max(0.55, 0.6 * s))
+    head = head.difference(eye)
+    body = body.difference(unary_union([head, ear]).buffer(GAP, join_style=1))
+    ear = ear.difference(head.buffer(GAP))
+    legs = unary_union([rr(x * s - 1.1 * s, -10.5 * s, x * s + 1.1 * s, -4.0 * s, 0.6 * s) for x in (-7.5, -3.8, 2.0, 5.6)]).difference(body.buffer(GAP))
+    return centre(printable(unary_union([body, head, ear, legs]), w=0.6, speck=0.6))
+
+def sheep_face(s=1.0):
+    """Sheep's face, front-on and big: a woolly cap, long face with eyes and nose, ears out to the sides."""
+    face = unary_union([affinity.translate(affinity.scale(Point(0, 0).buffer(1, quad_segs=48), 6.0 * s, 8.6 * s), 0, -2.0 * s),
+                        affinity.translate(affinity.scale(Point(0, 0).buffer(1, quad_segs=48), 4.6 * s, 3.6 * s), 0, -8.4 * s)])
+    cap = _cloud(0, 7.0 * s, 7.6 * s, 3.6 * s, 9, 2.6 * s).buffer(0.4, join_style=1).buffer(-0.4, join_style=1)
+    ears = unary_union([affinity.rotate(affinity.translate(affinity.scale(Point(0, 0).buffer(1, quad_segs=32), 4.4 * s, 1.8 * s), sd * 10.0 * s, 2.0 * s), -sd * 20, origin=(sd * 10.0 * s, 2.0 * s)) for sd in (-1, 1)])
+    eyes = unary_union([affinity.translate(affinity.scale(Point(0, 0).buffer(1, quad_segs=24), 1.0 * s, 1.3 * s), sd * 2.6 * s, -0.6 * s) for sd in (-1, 1)])
+    nose = Polygon([(-1.8 * s, -8.0 * s), (1.8 * s, -8.0 * s), (0, -9.8 * s)]).buffer(0.3)
+    mouth = LineString([(0, -9.8 * s), (0, -11.0 * s)]).buffer(GAP / 2)
+    face = face.difference(unary_union([eyes, nose, mouth]))
+    cap = cap.difference(face.buffer(GAP)).union(cap.intersection(face).difference(face))
+    cap = cap.difference(face.buffer(GAP))
+    ears = ears.difference(unary_union([face, cap]).buffer(GAP))
+    return centre(printable(unary_union([face, cap, ears]), w=0.6, speck=0.6))
+
+def wheat_broad(xo=6.4, rows=5, stalk=1.6):
+    """Single ear with longer grains reaching further out (more weight, same height), thicker stalk."""
+    z = safe_zone()
+    for k in np.arange(1.3, 0.7, -0.01):
+        pc = 3.28 * 6 / rows
+        c, wc = I.ear(0.0, (16.2 * k, 11.4 * k), 2.3 * k, rows, 12.5 * k, 8.0 * k, 0.85, xo * k, pc * k)
+        st = stadium((0.0, 8.0 * k - (rows - 1) * pc * k - 1.8), (0.0, -17.2 * k + 3.5 * k), stalk * k)
+        g = centre(unary_union(c + [st]))
+        if z.contains(g) and closest(g) >= 0.64: wheat_broad.w = wc; return g
