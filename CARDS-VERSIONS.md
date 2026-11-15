@@ -18,3 +18,12 @@ Wheat icons are much lighter than the rest; three different road drawings; helme
 dots on Largest Army; progress-card icons are the same green as their corner hexes.
 
 ## v2 - in design (previews first, files after approval)
+Preview: `catan-cards-v2-preview.png`. Code: `tools/v2/`.
+- One road drawing everywhere (rounded bar, dashed centre line): Road Building (2 roads), Longest Road (5 in a chain), Building Costs (1).
+- One card drawing everywhere (white card, hexagon in the middle): Year of Plenty, Monopoly, Building Costs dev-card piece.
+- Knight helmet: no crest, rounded dome (Knight, Largest Army, legend).
+- Progress cards: icons in white and resource colours, green only in the corners. Monopoly redesigned (crown over 3 matching cards).
+- Ore: two peaks with black ridge lines, centred on its weight. Wheat: unchanged (v1).
+- Longest Road / Largest Army: trophies the same size and height on both.
+- Backs: undecided. Test file `catan-backs-showthrough-test.3mf` (Knight v2 + Victory Point on the v1 development back)
+  shows whether the white rings show through the icons. If they do, the v2 backs in the preview are used.
