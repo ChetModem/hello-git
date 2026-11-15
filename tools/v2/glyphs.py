@@ -836,3 +836,43 @@ def sheaf3(s=1.0):
     neck = Polygon([(-1.6 * s, band_y + 1.2 * s + GAP), (1.6 * s, band_y + 1.2 * s + GAP), (0.9 * s, 3.4 * s), (-0.9 * s, 3.4 * s)]).difference(ears_u.buffer(GAP))
     g = unary_union([ears_u, band, fan.difference(splits), neck]).buffer(0)
     return centre(printable(g, w=0.6, speck=0.5))
+
+# ---------------------------------------------------------------- flat wood options
+def log_ends3(s=1.0):
+    """Three big log ends (2 below, 1 on top), each with a black bark ring and one growth ring."""
+    r = 6.0 * s; d = 2 * r + GAP; parts = []
+    for x, y in ((-d / 2, 0.0), (d / 2, 0.0), (0.0, d * np.sqrt(3) / 2)):
+        c = Point(x, y).buffer(r, quad_segs=64)
+        bark = c.difference(c.buffer(-max(0.9, r * 0.16))).difference(c.buffer(-max(0.9, r * 0.16) - GAP))
+        bark_line = c.buffer(-max(0.9, r * 0.16)).difference(c.buffer(-max(0.9, r * 0.16) - GAP))
+        ring = Point(x + r * 0.06, y + r * 0.04).buffer(r * 0.42, quad_segs=48)
+        parts.append(c.difference(bark_line).difference(ring.difference(ring.buffer(-GAP))))
+    return centre(unary_union(parts))
+
+def pine_tree(s=1.0):
+    """Pine tree: three stacked tiers with a black gap between them, and a trunk."""
+    tiers = []
+    for i, (w, y0, h) in enumerate(((22.0, -6.0, 9.5), (17.0, 0.2, 8.5), (11.5, 5.6, 8.0))):
+        t = Polygon([(-w / 2 * s, y0 * s), (w / 2 * s, y0 * s), (0, (y0 + h) * s)]).buffer(0.5, join_style=1).buffer(-0.5, join_style=1)
+        tiers.append(t)
+    out = []
+    for i, t in enumerate(tiers):
+        above = unary_union(tiers[i + 1:]) if i + 1 < len(tiers) else Polygon()
+        out.append(t.difference(above.buffer(GAP, join_style=1)) if not above.is_empty else t)
+    trunk = rr(-1.8 * s, -12.0 * s, 1.8 * s, -6.0 * s - GAP, 0.3)
+    return centre(unary_union(out + [trunk]))
+
+def log_side(s=1.0):
+    """One log seen side-on: long body, cut end on the left showing rings, a short branch stub on top."""
+    L, R = 24.0 * s, 5.0 * s
+    body = rr(-L / 2, -R, L / 2, R, R * 0.9)
+    end = affinity.scale(Point(0, 0).buffer(1, quad_segs=48), R * 0.55, R)
+    end = affinity.translate(end, -L / 2 + R * 0.55, 0)
+    body = body.difference(end.buffer(GAP))
+    ring = affinity.scale(Point(0, 0).buffer(1, quad_segs=48), R * 0.25, R * 0.48)
+    ring = affinity.translate(ring, -L / 2 + R * 0.6, 0)
+    end = end.difference(ring.difference(ring.buffer(-GAP)))
+    stub = Polygon([(L * 0.12, R - 0.4), (L * 0.12 + 2.6 * s, R - 0.4), (L * 0.12 + 4.6 * s, R + 3.4 * s), (L * 0.12 + 2.4 * s, R + 3.4 * s)])
+    grain = unary_union([LineString([(-L * 0.18, y), (L * 0.40, y)]).buffer(GAP / 2, cap_style=1) for y in (-R * 0.35, R * 0.25)])
+    body = unary_union([body, stub]).difference(grain)
+    return centre(printable(unary_union([body, end]), w=0.6, speck=0.5))
