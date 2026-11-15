@@ -180,18 +180,24 @@ def printable(g, w=0.6, speck=2.0):
 # ---------------------------------------------------------------- cards: {colour slot: shape}
 RES = {'brick': (3, m_brick), 'wood': (4, m_wood), 'wheat': (5, m_wheat), 'sheep': (2, m_sheep), 'ore': (6, m_ore)}
 
-MINI = 9.5      # resource icon size on the Building Costs card (mm)
-MULT_CAP = 4.3  # height of the "x3" / "x2" numbers
+HEX_W = 8.2      # resource hexagon width on the Building Costs card (mm), same pointy-top shape as the corner hexes
+NUM_CAP = 4.6    # count number cut into the hexagon in black
+RES_SLOT = {'brick': 3, 'wood': 4, 'wheat': 5, 'sheep': 2, 'ore': 6}
+
+def res_hex(n=1, w=HEX_W):
+    """Resource hexagon in the resource card's colour; a count of 2+ is cut into it in black."""
+    h = hexagon(0, 0, w).buffer(0.25, join_style=1).buffer(-0.25, join_style=1)     # softened corners
+    if n > 1:
+        t, _ = text(str(n), NUM_CAP, True, track=0); b = t.bounds
+        h = h.difference(place(t, -(b[0] + b[2]) / 2, -(b[1] + b[3]) / 2))
+    return h
+
 def building_costs():
-    """No corner hexes on this card: the space goes to bigger icons. Repeated resources are shown
-    once with a multiplier (x3, x2) so every row fits on one line."""
-    import minis2 as M
+    """No corner hexes on this card: one row per thing you can buy, its cost as resource-coloured hexagons."""
     rows = [(p_road, [('brick', 1), ('wood', 1)]),
             (p_settlement, [('brick', 1), ('wood', 1), ('wheat', 1), ('sheep', 1)]),
             (p_city, [('ore', 3), ('wheat', 2)]),
             (p_devcard, [('ore', 1), ('wheat', 1), ('sheep', 1)])]
-    icons = {n: M.mini(n, MINI) for n in ('brick', 'wood', 'wheat', 'sheep', 'ore')}
-    slot = {'brick': 3, 'wood': 4, 'wheat': 5, 'sheep': 2, 'ore': 6}
     out = {2: [], 3: [], 4: [], 5: [], 6: []}
     for i, (piece, res) in enumerate(rows):
         y = 24.0 - i * 16.0
@@ -199,16 +205,14 @@ def building_costs():
         out[2].append(place(pc, -18.6 - (b[0] + b[2]) / 2, y - (b[1] + b[3]) / 2))
         x = -13.0
         for r, n in res:
-            g = icons[r]; b = g.bounds
-            out[slot[r]].append(place(g, x - b[0], y - (b[1] + b[3]) / 2)); x += (b[2] - b[0]) + 1.0
-            if n > 1:
-                t, tw = text('\u00d7' + str(n), MULT_CAP, True); tb = t.bounds
-                out[slot[r]].append(place(t, x + 0.2 - tb[0], y - (tb[1] + tb[3]) / 2)); x += (tb[2] - tb[0]) + 0.2 + 1.6
-        assert x - 1.0 <= 23.6, f'row {i} too wide: ends at {x - 1.0:.1f}'
-    return {k: printable(unary_union(v), speck=0) for k, v in out.items() if v}
+            out[RES_SLOT[r]].append(place(res_hex(n), x + HEX_W / 2, y)); x += HEX_W + 1.2
+        assert x - 1.2 <= 23.6, f'row {i} too wide: ends at {x - 1.2:.1f}'
+    return {k: printable(unary_union(v), speck=0.5) for k, v in out.items() if v}
 
-def trophies(y, h=12.5):
-    t = dev_icon('vp', h); w = t.bounds[2] - t.bounds[0]
+def trophies(y, h=9.5):
+    t = dev_icon('vp', h)
+    t = t.buffer(0.3, join_style=2, mitre_limit=10).buffer(-0.3, join_style=2, mitre_limit=10)   # fill black slivers under 0.6 mm (handle loops)
+    w = t.bounds[2] - t.bounds[0]
     return unary_union([place(t, -(w / 2 + 1.5), y), place(t, w / 2 + 1.5, y)])
 
 def longest_road():
@@ -224,7 +228,7 @@ def longest_road():
         roads.append(stadium(a0, a1, wd)); x, y = x + dx, y + dy
     r = unary_union(roads); b = r.bounds
     r = affinity.translate(r, -(b[0] + b[2]) / 2, 9.0 - (b[1] + b[3]) / 2)
-    return {6: r, 9: unary_union([printable(trophies(-11.0))] + [hexagon(*c) for c in CORNERS])}
+    return {2: r, 9: unary_union([printable(trophies(-11.0))] + [hexagon(*c) for c in CORNERS])}
 
 def largest_army():
     big = knight_helmet(24.0); small = knight_helmet(17.0)      # leader in the middle, two either side
@@ -232,7 +236,7 @@ def largest_army():
     wb = big.bounds[2] - big.bounds[0]; ws = small.bounds[2] - small.bounds[0]; gap = 1.4
     helms = unary_union([place(big, 0, base - big.bounds[1])] +
                         [place(small, sd * (wb / 2 + gap + ws / 2), base - small.bounds[1]) for sd in (-1, 1)])
-    return {8: printable(helms, speck=0.8), 9: unary_union([printable(trophies(-15.5))] + [hexagon(*c) for c in CORNERS])}
+    return {8: printable(helms, speck=0.8), 9: unary_union([printable(trophies(-13.5))] + [hexagon(*c) for c in CORNERS])}
 
 CARDS = {'building-costs': (building_costs, 4), 'longest-road': (longest_road, 1), 'largest-army': (largest_army, 1)}
 
@@ -242,15 +246,15 @@ COLS = {1: (20, 20, 20), 2: (240, 240, 240), 3: (200, 60, 50), 4: (110, 120, 60)
 
 
 ENTRIES = [
-    ('knight', 8, 'KNIGHT', 'Move the robber. Steal 1 random resource from a player with a settlement or city touching that hex.'),
-    ('vp', 9, 'VICTORY POINT', '1 point. Keep it hidden until it wins you the game.'),
-    ('rb', 7, 'ROAD BUILDING', 'Build 2 roads for free.'),
+    ('knight', 8, 'KNIGHT', 'Move the robber. Steal 1 resource from a player next to it.'),
+    ('vp', 9, 'VICTORY POINT', 'Worth 1 point. Keep it secret until you win.'),
+    ('rb', 7, 'ROAD BUILDING', 'Build 2 free roads.'),
     ('yop', 7, 'YEAR OF PLENTY', 'Take any 2 resources from the bank.'),
-    ('mono', 7, 'MONOPOLY', 'Name a resource. All other players give you every card of that type.'),
-    ('lr', 9, 'LONGEST ROAD', '2 points. First to build an unbroken road of 5 or more segments. A longer road takes the card.'),
-    ('la', 9, 'LARGEST ARMY', '2 points. First to play 3 knights. Playing more knights than the holder takes the card.'),
+    ('mono', 7, 'MONOPOLY', 'Name a resource. Everyone gives you all of theirs.'),
+    ('lr', 9, 'LONGEST ROAD', '2 points. First to build 5 roads in a row. A longer road takes it.'),
+    ('la', 9, 'LARGEST ARMY', '2 points. First to play 3 knights. Playing more takes it.'),
 ]
-FOOT = 'Development cards cost 1 ore, 1 wheat and 1 sheep. Play at most 1 per turn, at any time on your turn, but not on the turn you bought it. Victory point cards are never played, just revealed.'
+FOOT = 'Development cards: play 1 per turn, but not on the turn you buy it.'
 
 TITLE_CAP, BODY_CAP, LEAD, ICON_H = 4.0, 3.4, 2.4, 14.0
 EMBOLDEN = 0.06
@@ -258,7 +262,7 @@ BOARD_W = 240.0; MARGIN = 8.0; ICON_COL = 22.0; COL_GAP = 8.0
 BOARD_H = None
 
 def _icon(key):
-    if key == 'lr': return 6, _road_chain(5.4, 1.8)        # grey like the stone roads
+    if key == 'lr': return 2, _road_chain(5.4, 1.8)        # white, like the pieces on the Building Costs card
     if key == 'la': return 8, largest_army_small()
     return {'knight': 8, 'vp': 9, 'rb': 7, 'yop': 7, 'mono': 7}[key], dev_icon(key, ICON_H)
 
@@ -300,11 +304,10 @@ def legend():
             for g in gs: add(slot, place(g, x0, Y0 + y))
     yf = -BOARD_H / 2 + MARGIN + fh
     add(2, box(-BOARD_W / 2 + MARGIN, yf + 3.15, BOARD_W / 2 - MARGIN, yf + 3.85))            # divider line
-    import minis2 as M
     xx = -BOARD_W / 2 + MARGIN
-    for r, sl in (('ore', 6), ('wheat', 5), ('sheep', 2)):
-        g = M.mini(r, 7.4); b = g.bounds; add(sl, place(g, xx - b[0], yf - fh / 2 - (b[1] + b[3]) / 2)); xx += b[2] - b[0] + 1.2
-    g = affinity.scale(p_devcard(), 1.15, 1.15, origin=(0, 0)); b = g.bounds; add(2, place(g, xx - b[0], yf - fh / 2 - (b[1] + b[3]) / 2))
+    for r in ('ore', 'wheat', 'sheep'):
+        add(RES_SLOT[r], place(res_hex(1, 6.4), xx + 3.2, yf - fh / 2)); xx += 6.4 + 1.0
+    g = affinity.scale(p_devcard(), 1.15, 1.15, origin=(0, 0)); b = g.bounds; add(2, place(g, xx + 0.8 - b[0], yf - fh / 2 - (b[1] + b[3]) / 2))
     y = yf
     for ln in flines:
         y -= BODY_CAP; t, _ = text(ln, BODY_CAP, True); add(2, place(t.buffer(EMBOLDEN, join_style=1), -BOARD_W / 2 + MARGIN + fx, y)); y -= LEAD
@@ -332,13 +335,18 @@ def largest_army_small():
 
 # ---------------------------------------------------------------- back of the new cards
 def special_back():
-    """Same outer hex ring as the resource back, plus a solid hexagon in the middle
-    (the dev back has three nested rings). Symmetric, so it reads the same from either side."""
+    """Outer hex ring (as on the resource back) plus one inner ring turned 30 degrees, points to the
+    outer ring's flat sides. Lines only, no solid areas. Resource back = 1 ring, development = 3 nested."""
     res = pickle.load(open(os.path.join(SP, 'logo.pkl'), 'rb'))
     dev = pickle.load(open(os.path.join(SP, 'dev_shapes.pkl'), 'rb'))['knight']['logo']
-    rings = sorted(dev.geoms, key=lambda g: g.area)
-    middle = Polygon(rings[1].exterior)
-    return unary_union([res, middle]).buffer(0)
+    rings = sorted(dev.geoms, key=lambda g: g.area)            # inner, middle, outer
+    spacing = rings[2].distance(rings[1])                      # black space between rings on the dev back
+    inner = affinity.rotate(rings[1], 30, origin=(0, 0))
+    for _ in range(40):                                        # same spacing to the outer ring as the dev back
+        d = inner.distance(res)
+        if abs(d - spacing) < 0.02: break
+        k = 1 + (d - spacing) / 20.0; inner = affinity.scale(inner, k, k, origin=(0, 0))
+    return unary_union([res, inner]).buffer(0)
 
 def board_outline():
     return rr(-BOARD_W / 2, -BOARD_H / 2, BOARD_W / 2, BOARD_H / 2, 4)

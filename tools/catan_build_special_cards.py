@@ -128,7 +128,7 @@ if __name__ == '__main__':
         sh = {k: v.difference(hexes).buffer(0) for k, v in sh.items()}
         sh = {k: v for k, v in sh.items() if v.area > 0.05}
         cards.append(dict(name=name, plate=pl, x=x, y=y, parts=card_parts(sh, corner, corners=not name.startswith('Building'))))
-    write_project(f'{REPO}/catan-special-cards-6.3mf', cards, ['Building Costs x4 (6 colours)', 'Longest Road + Largest Army (5 colours)'])
+    write_project(f'{REPO}/catan-special-cards-6.3mf', cards, ['Building Costs x4 (6 colours)', 'Longest Road + Largest Army (4 colours)'])
     print('cards written')
     # ---------------- legend board (plate 1) + two stand feet (plate 2)
     L = D.legend(); W, H = D.BOARD_W, D.BOARD_H
