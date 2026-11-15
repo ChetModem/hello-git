@@ -52,7 +52,7 @@ def card_parts(shapes, corner_slot):
 
 def write_project(out, objects, plate_names):
     """objects: list of dict(name, plate, x, y, parts)."""
-    d = out + '.dir'; shutil.rmtree(d, ignore_errors=True); shutil.copytree(TEMPLATE, d)
+    d = os.path.join(SP, 'special', 'builddirs', os.path.basename(out) + '.dir'); shutil.rmtree(d, ignore_errors=True); shutil.copytree(TEMPLATE, d)
     # --- meshes
     o = open(f'{d}/3D/Objects/object_205.model').read()
     head = o[:o.find('<resources>') + len('<resources>')]; tail = '\n </resources>\n</model>\n'
