@@ -1327,7 +1327,7 @@ def brick2():
     rows = [box(-6.78, y1, 6.78, y1 + h), box(-6.78, -y1 - h, 6.78, -y1)]
     return centre(soften(unary_union(mid + rows), 0.3))
 
-def wheat_angular3(k=1.0, rows=5, w=1.95, pitch0=2.85, extra=1.5):
+def wheat_angular3(k=1.0, rows=5, w=1.95, pitch0=2.85, extra=1.5, sw=2.0):
     """wheat_angular2 with grains packed a little closer and the saved height given to the stalk."""
     parts = []; pitch = pitch0 * k; y0 = 6.0 * k
     for i in range(rows):
@@ -1337,7 +1337,7 @@ def wheat_angular3(k=1.0, rows=5, w=1.95, pitch0=2.85, extra=1.5):
     parts.append(_grain((0, y0 + 2.1 * k), (0, y0 + 2.1 * k + 5.4 * k), w))
     ear = unary_union(parts)
     ylow = y0 - (rows - 1) * pitch
-    stalk = box(-1.0, ylow - (4.2 + extra) * k, 1.0, ylow - 1.0)
+    stalk = box(-sw / 2, ylow - (4.2 + extra) * k, sw / 2, ylow - 1.0)
     return centre(soften(unary_union([ear, stalk.difference(ear.buffer(LINE))]), 0.25))
 
 def ore_rocks6(k=1.0):
@@ -1347,5 +1347,25 @@ def ore_rocks6(k=1.0):
     small = Polygon(S([(-15.0, -7.4), (-11.0, -8.4), (-7.0, -7.7), (-6.4, -3.0), (-9.5, 1.8), (-14.2, -0.8)])).difference(big.buffer(LINE * 1.1))
     ln = lambda p: LineString(S(p)).buffer(LINE / 2, cap_style=2, join_style=2)
     fb = unary_union([ln(p) for p in [[(-1.5, 9.0), (1.0, 1.0), (6.5, 7.5)], [(1.0, 1.0), (1.6, -8.8)], [(1.0, 1.0), (-7.7, 1.5)], [(1.0, 1.0), (11.2, -1.5)]]])
+    fs = unary_union([ln([(-12.6, 0.2), (-10.6, -4.6), (-10.2, -8.9)]), ln([(-10.6, -4.6), (-6.6, -5.2)])])
+    return centre(soften(printable(unary_union([big.difference(fb), small.difference(fs)]), w=0.6, speck=1.0)))
+
+# ---------------------------------------------------------------- round 7: big rock lines, wheat middle ground
+BIG_LINES = {
+    'spoke': [[(-1.5, 9.0), (1.0, 1.0), (6.5, 7.5)], [(1.0, 1.0), (1.6, -8.8)], [(1.0, 1.0), (-7.7, 1.5)], [(1.0, 1.0), (11.2, -1.5)]],
+    # two meeting points instead of one, so the faces are uneven like broken stone
+    'split': [[(-1.5, 9.0), (-0.6, 2.6), (6.5, 7.5)], [(-0.6, 2.6), (-7.7, 1.5)], [(-0.6, 2.6), (3.0, -0.6)],
+              [(3.0, -0.6), (11.2, -1.5)], [(3.0, -0.6), (2.0, -8.8)]],
+    # split, with a small zag in the long line down the front (the mountain-line idea)
+    'zag':   [[(-1.5, 9.0), (-0.6, 2.6), (6.5, 7.5)], [(-0.6, 2.6), (-7.7, 1.5)], [(-0.6, 2.6), (3.0, -0.6)],
+              [(3.0, -0.6), (11.2, -1.5)], [(3.0, -0.6), (1.6, -3.6), (2.6, -5.4), (2.0, -8.8)]],
+}
+def ore_rocks7(k=1.0, big_style='split'):
+    """Final ore: round-3 small-rock lines, big-rock lines by style."""
+    S = lambda pts: [(x * k, y * k) for x, y in pts]
+    big = Polygon(S([(-5.5, -7.3), (1.6, -8.4), (8.6, -7.5), (11.0, -1.5), (6.5, 7.5), (-1.5, 9.0), (-7.5, 1.5)]))
+    small = Polygon(S([(-15.0, -7.4), (-11.0, -8.4), (-7.0, -7.7), (-6.4, -3.0), (-9.5, 1.8), (-14.2, -0.8)])).difference(big.buffer(LINE * 1.1))
+    ln = lambda p: LineString(S(p)).buffer(LINE / 2, cap_style=2, join_style=2, mitre_limit=2.5)
+    fb = unary_union([ln(p) for p in BIG_LINES[big_style]])
     fs = unary_union([ln([(-12.6, 0.2), (-10.6, -4.6), (-10.2, -8.9)]), ln([(-10.6, -4.6), (-6.6, -5.2)])])
     return centre(soften(printable(unary_union([big.difference(fb), small.difference(fs)]), w=0.6, speck=1.0)))
