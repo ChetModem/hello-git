@@ -1614,3 +1614,69 @@ def road_hammer5(k=1.0):
     return centre(soften(printable(g, w=0.6, speck=2.0)))
 def longest_road5(n=4, seg=10.6, angle=30):
     return centre(soften(cobbled_path5(winding_pts(n, seg, angle), ROAD_W, ROAD_STONE)))
+
+# ---------------------------------------------------------------- round D3
+def cobbled_path6(pts, width, stone, cutter=None, min_stone=6.0, seed=3):
+    """Cobbled road with irregular stones: each row of each run gets its own run of stone lengths (0.7-1.35 x stone),
+    so joints never line up into a pattern; small stones merged into a neighbour (uneven cobbles, nothing missing)."""
+    rng = np.random.default_rng(seed)
+    line = LineString(pts)
+    body = line.buffer(width / 2, cap_style=2, join_style=2, mitre_limit=4)
+    fixed = [line.buffer(GAP / 2, cap_style=2)]
+    for i in range(1, len(pts) - 1):
+        (x0, y0), (x1, y1), (x2, y2) = pts[i - 1], pts[i], pts[i + 1]
+        u = np.array([x1 - x0, y1 - y0]); u /= np.linalg.norm(u); v = np.array([x2 - x1, y2 - y1]); v /= np.linalg.norm(v)
+        bis = u + v; nrm = np.array([-bis[1], bis[0]]); nrm /= np.linalg.norm(nrm)
+        fixed.append(LineString([(x1 - nrm[0] * width, y1 - nrm[1] * width), (x1 + nrm[0] * width, y1 + nrm[1] * width)]).buffer(GAP / 2, cap_style=2))
+    if cutter is not None: fixed.append(cutter)
+    stones = []
+    for i in range(len(pts) - 1):
+        (x0, y0), (x1, y1) = pts[i], pts[i + 1]
+        seg = np.hypot(x1 - x0, y1 - y0); ux, uy = (x1 - x0) / seg, (y1 - y0) / seg; nx, ny = -uy, ux
+        for side in (1, -1):
+            s = stone * rng.uniform(0.45, 1.1)
+            while s < seg - stone * 0.45:
+                px, py = x0 + ux * s, y0 + uy * s
+                stones.append(LineString([(px, py), (px + side * nx * width, py + side * ny * width)]).buffer(GAP / 2, cap_style=2))
+                s += stone * rng.uniform(0.7, 1.35)
+    fx = unary_union(fixed)
+    for _ in range(60):
+        g = body.difference(unary_union([fx] + stones)).buffer(0)
+        small = [p for p in pieces(g) if p.area < min_stone]
+        if not small or not stones: break
+        p = small[0]; j = min(range(len(stones)), key=lambda q: stones[q].distance(p))
+        if stones[j].distance(p) > GAP: break
+        stones.pop(j)
+    return printable(body.difference(unary_union([fx] + stones)).buffer(0), w=0.6, speck=0.8)
+
+def longest_road6(n=4, seg=10.6, angle=20, seed=3):
+    return centre(soften(cobbled_path6(winding_pts(n, seg, angle), ROAD_W, ROAD_STONE, seed=seed)))
+
+def road_tool6(k=1.0, tool='hammer', seed=5):
+    L = 28.0 * k
+    tl = hammer2(25.0 * k, 3.7) if tool == 'hammer' else shovel(25.0 * k, 3.7)
+    r = cobbled_path6([(-L / 2, 0), (L / 2, 0)], ROAD_W, ROAD_STONE, cutter=tl.buffer(GAP, join_style=1), seed=seed)
+    g = affinity.rotate(unary_union([r, tl]), 45, origin=(0, 0))
+    return centre(soften(printable(g, w=0.6, speck=2.0)))
+
+def shovel(length, width):
+    """Shovel pointing up: D-grip at the bottom, straight handle, pointed spade blade at the top."""
+    hw = width * 0.6
+    bl_h, bl_w = width * 2.3, width * 2.0; yt = length / 2
+    blade = Polygon([(-bl_w / 2, yt - bl_h), (bl_w / 2, yt - bl_h), (bl_w / 2, yt - bl_h * 0.35), (0, yt), (-bl_w / 2, yt - bl_h * 0.35)])
+    neck = box(-hw * 0.8, yt - bl_h - width * 0.5, hw * 0.8, yt - bl_h + 0.1)
+    handle = box(-hw / 2, -length / 2 + width * 1.1, hw / 2, yt - bl_h - width * 0.4)
+    grip_o = rr(-width * 0.9, -length / 2, width * 0.9, -length / 2 + width * 1.3, 0.6)
+    grip = grip_o.difference(rr(-width * 0.45, -length / 2 + hw * 0.75, width * 0.45, -length / 2 + width * 1.3 - hw * 0.75, 0.3))
+    return soften(unary_union([blade, neck, handle, grip]), 0.3)
+
+def fist(w):
+    """Fist seen from the front, holding something at its top: four finger bands (black cuts) and a thumb across."""
+    h = w * 0.78
+    palm = rr(-w / 2, -h / 2, w / 2, h / 2, w * 0.16)
+    bands = unary_union([box(-w / 2 - 1, -h / 2 + h * f - GAP / 2, w / 2 + 1, -h / 2 + h * f + GAP / 2) for f in (0.27, 0.50)])
+    knuck = unary_union([box(-w / 2 + w * f - GAP / 2, -h / 2 + h * 0.50, -w / 2 + w * f + GAP / 2, h / 2 + 1) for f in (0.25, 0.5, 0.75)])
+    thumb = affinity.rotate(rr(-w * 0.36, -h * 0.13, w * 0.36, h * 0.13, h * 0.12), 12, origin=(0, 0))
+    thumb = affinity.translate(thumb, -w * 0.12, h * 0.02)
+    palm = palm.difference(unary_union([bands, knuck, thumb.buffer(GAP, join_style=1)]))
+    return centre(soften(unary_union([palm, thumb]), 0.3))

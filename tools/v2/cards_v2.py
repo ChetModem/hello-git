@@ -103,7 +103,7 @@ def victory_point():
 def road_building():
     """Road (same stones as Longest Road) crossed with a hammer, built at final size."""
     for k in np.arange(1.2, 0.6, -0.01):
-        g = G.road_hammer3(k)
+        g = G.road_tool6(k, 'hammer')
         if ZONE.contains(g): return {WHITE: g}, GREEN
 def year_of_plenty():
     """Same card size as Monopoly's (built at final size)."""
@@ -137,18 +137,19 @@ def monopoly():
 
 # ---------------------------------------------------------------- table cards
 TROPHY_H, TABLE_GAP = 12.5, 4.0
+LR_SEED = 7
 def trophies():
     t = G.trophy(TROPHY_H)
     w = t.bounds[2] - t.bounds[0]
     return unary_union([place(t, -(w / 2 + 1.6), 0), place(t, w / 2 + 1.6, 0)])
+TROPHY_BOTTOM = -18.2          # one fixed trophy row for every table card (where Largest Army's sat)
 def table_layout(top_slot, top):
-    """Table cards: the card's picture, TABLE_GAP above the pair of trophies, the whole group centred on the card."""
-    tr = trophies(); tb = tr.bounds; t = G.centre(top)
-    t = place(t, 0, tb[3] + TABLE_GAP - t.bounds[1])
-    allg = unary_union([t, tr]); b = allg.bounds; dy = -(b[1] + b[3]) / 2
-    return {top_slot: place(t, 0, dy), ORANGE: place(tr, 0, dy)}, ORANGE
+    """Table cards: the pair of trophies always in the same place; the card's picture TABLE_GAP above them."""
+    tr = trophies(); tr = place(tr, 0, TROPHY_BOTTOM - tr.bounds[1]); t = G.centre(top)
+    t = place(t, 0, tr.bounds[3] + TABLE_GAP - t.bounds[1])
+    return {top_slot: t, ORANGE: tr}, ORANGE
 def longest_road():
-    return table_layout(WHITE, G.longest_road3(4, 10.6))
+    return table_layout(WHITE, G.longest_road6(4, 10.6, 20, seed=LR_SEED))
 def largest_army():
     big = G.helmet(22.0); small = G.helmet(15.5); gap = 1.4
     wb = big.bounds[2] - big.bounds[0]; ws = small.bounds[2] - small.bounds[0]
