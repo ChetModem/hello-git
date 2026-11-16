@@ -17,6 +17,19 @@ all development cards and the 6 special cards (it can show through the 0.5 mm ca
 Wheat icons are much lighter than the rest; three different road drawings; helmet crests drop to
 dots on Largest Army; progress-card icons are the same green as their corner hexes.
 
+## v2 gold standard: the resource cards (locked)
+The five resource cards and their back are final and are the reference for every other card.
+Test plate: `catan-resource-cards-v2-test.3mf` (one of each, 0.5 mm, built by `tools/v2/build_resource_test.py`).
+Design rules taken from them:
+1. Flat, straight-on drawing. Solid colour shapes; detail only as black cuts, never as drawn outlines.
+2. One line weight: every cut and gap 0.8 mm (brick mortar 0.9 is the one deliberate exception).
+3. Every outside corner and tip rounded 0.3 mm.
+4. No small fiddly pieces: smallest piece in an icon about 8 mm2 (hard floor 2 mm2).
+5. Even weight: about 270 mm2 of colour per icon; a shape may be lighter only when that is its nature (wheat).
+6. Shared placement: tall icons end on one line (13.7 mm below centre), wide icons on another (8.5 mm), centred left-right.
+7. Minimal: no faces, no text; recognisable from the outline alone.
+8. One colour per icon, matching the corner hexagons. Built at final size (never shrunk after building).
+
 ## v2 - in design (previews first, files after approval)
 Preview: `catan-cards-v2-preview.png`. Code: `tools/v2/`.
 - Roads drawn as cobbled paths (black joints mark two staggered rows of stones, joints run through every bend):
