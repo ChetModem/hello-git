@@ -139,6 +139,8 @@ def year_of_plenty():
 # ---------------------------------------------------------------- table cards
 TROPHY_H, TABLE_GAP = 12.5, 4.0
 LR_SEED = 4
+LR_DIP = {2: dict(up=0.0, lo=0.5, lo_pre=0.55, up_pre=0.0)}
+LR_NUDGE = {(2, 1, 0): 0.2}
 def trophies():
     t = G.trophy(TROPHY_H)
     w = t.bounds[2] - t.bounds[0]
@@ -150,7 +152,9 @@ def table_layout(top_slot, top):
     t = place(t, 0, tr.bounds[3] + TABLE_GAP - t.bounds[1])
     return {top_slot: t, ORANGE: tr}, ORANGE
 def longest_road():
-    return table_layout(WHITE, G.longest_road7(4, 10.6, 20, seed=LR_SEED))
+    """Road of evened irregular cobbles, 4 runs at 20 degrees; the dip's joints placed by hand (offset, angled,
+    nothing straight across), one joint nudged 1 mm to even the stones."""
+    return table_layout(WHITE, G.longest_road11(LR_DIP, nudge=LR_NUDGE, seed=LR_SEED))
 def largest_army():
     big = G.helmet(22.0); small = G.helmet(15.5); gap = 1.4
     wb = big.bounds[2] - big.bounds[0]; ws = small.bounds[2] - small.bounds[0]

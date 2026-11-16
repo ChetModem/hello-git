@@ -68,6 +68,13 @@ Preview: `catan-cards-v2-preview.png`. Code: `tools/v2/`.
   - Locked: Road Building = hammer crossed with a road of irregular, uneven cobbles (nothing left out).
     Rejected: shovel (reads as digging), pickaxe (mining / ore), hammer + shovel crossed (loses the road),
     both tools over a road (too busy).
-  - Longest Road: road of irregular cobbles, 4 runs at 20 degrees; wagon-wheel versions rejected (too busy).
-  - Open: Monopoly (crown above a fan with centre hexagons / figure behind the fan / fist holding cards).
+  - Locked: Longest Road = road of evened irregular cobbles, 4 runs at 20 degrees; joints at the bends offset (never
+    straight across); the middle dip's joints placed by hand and one joint nudged 1 mm to even the stones.
+    Rejected: wagon wheel (too busy), straight-through bend joints, regular stagger (grid pattern).
+  - Locked: Monopoly = crown just above a fan of three cards, each with its whole centre hexagon.
+    Rejected: crown resting on the fan (squashed, hexagons hidden), figure behind the fan, fist holding cards,
+    crown on a deck, crown alone with a hexagon jewel.
+  - Locked: Year of Plenty sized by weight like every icon (its cards larger than Monopoly's; matching Monopoly's
+    card size would leave it at ~106 mm2). Size options: `catan-year-of-plenty-size-options.png`.
+  - Resource sheep updated: legs and fleece raised so it is centred on its weight (feet still on the shared line).
 - Test: `catan-backs-showthrough-test.3mf` - Knight and Victory Point at 0.5 mm (left) and 0.6 mm (right).
