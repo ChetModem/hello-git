@@ -1398,3 +1398,28 @@ def ore_rocks7(k=1.0, big_style='split'):
     fb = unary_union([ln(p) for p in BIG_LINES[big_style]])
     fs = unary_union([ln([(-12.6, 0.2), (-10.6, -4.6), (-10.2, -8.9)]), ln([(-10.6, -4.6), (-6.6, -5.2)])])
     return centre(soften(printable(unary_union([big.difference(fb), small.difference(fs)]), w=0.6, speck=1.0)))
+
+# ---------------------------------------------------------------- round 11: small rock's left face
+SMALL_ROCKS = {
+    'orig':    ([(-15.0, -7.4), (-11.0, -8.4), (-7.0, -7.7), (-6.4, -3.0), (-9.5, 1.8), (-14.2, -0.8)],
+                [[(-12.6, 0.2), (-10.6, -4.6), (-10.2, -8.9)], [(-10.6, -4.6), (-6.6, -5.2)]]),
+    # facet line starts further right on the top edge, so the left face is wider and less of a shard
+    'wider':   ([(-15.0, -7.4), (-11.0, -8.4), (-7.0, -7.7), (-6.4, -3.0), (-9.5, 1.8), (-14.2, -0.8)],
+                [[(-11.5, 0.8), (-10.3, -4.6), (-10.2, -8.9)], [(-10.3, -4.6), (-6.6, -5.2)]]),
+    # outline gets an extra corner on the left, so that face is a blunter five-sided shape
+    'blunt':   ([(-15.0, -7.4), (-11.0, -8.4), (-7.0, -7.7), (-6.4, -3.0), (-9.5, 1.8), (-12.4, 1.0), (-14.8, -2.4)],
+                [[(-12.0, 1.1), (-10.6, -4.6), (-10.2, -8.9)], [(-10.6, -4.6), (-6.6, -5.2)]]),
+    # both: blunter outline and a gently bent line, so the face is a softer, rounder-cornered slab
+    'soft':    ([(-15.0, -7.4), (-11.0, -8.4), (-7.0, -7.7), (-6.4, -3.0), (-9.5, 1.8), (-12.4, 1.0), (-14.8, -2.4)],
+                [[(-11.6, 1.2), (-11.0, -1.8), (-10.4, -4.6), (-10.2, -8.9)], [(-10.4, -4.6), (-6.6, -5.2)]]),
+}
+def ore_rocks8(k=1.0, small_style='orig'):
+    """Locked ore (big rock 'noright'), small rock outline and lines by style."""
+    S = lambda pts: [(x * k, y * k) for x, y in pts]
+    poly, lines = SMALL_ROCKS[small_style]
+    big = Polygon(S([(-5.5, -7.3), (1.6, -8.4), (8.6, -7.5), (11.0, -1.5), (6.5, 7.5), (-1.5, 9.0), (-7.5, 1.5)]))
+    small = Polygon(S(poly)).difference(big.buffer(LINE * 1.1))
+    ln = lambda p: LineString(S(p)).buffer(LINE / 2, cap_style=2, join_style=2, mitre_limit=2.5)
+    fb = unary_union([ln(p) for p in BIG_LINES['noright']])
+    fs = unary_union([ln(p) for p in lines])
+    return centre(soften(printable(unary_union([big.difference(fb), small.difference(fs)]), w=0.6, speck=1.0)))
