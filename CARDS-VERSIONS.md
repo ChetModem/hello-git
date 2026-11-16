@@ -32,8 +32,9 @@ Preview: `catan-cards-v2-preview.png`. Code: `tools/v2/`.
   - Wood: pine tree, three tiers and a trunk (olive filament kept).
   - Sheep: symmetrical fleece, head and ears as one solid shape, no face, two legs.
   - Wheat: single ear of angular grains, 1.7 mm stalk.
-  - Ore: two faceted rocks on an uneven base; small rock with its original lines, big rock with a Y of lines and no right line.
-  Rounds of options: `catan-resource-round3..7.png`, `catan-ore-lines-round9/10.png`.
+  - Ore: two faceted rocks on an uneven base; big rock with a Y of lines and no right line; small rock with a cut
+    bottom-left corner and its lower line veering off towards that corner.
+  Rounds of options: `catan-resource-round3..7.png`, `catan-ore-lines-round9/10.png`, `catan-ore-small-rock-round11/12.png`.
 - One card drawing everywhere (white card, black hexagon outline = a resource back with the colours swapped):
   Year of Plenty, Monopoly, Building Costs dev-card piece.
 - Monopoly: crown over 3 cards. Road Building, Year of Plenty, Monopoly: white icons, green only in the corners.
