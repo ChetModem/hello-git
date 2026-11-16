@@ -60,4 +60,14 @@ Preview: `catan-cards-v2-preview.png`. Code: `tools/v2/`.
   pieces under 2 mm2 (two chips at the Longest Road bends removed), single development icons centred halfway
   between outline and weight like the ore, Knight helmet brought down to the others' weight (327 -> 297 mm2).
   Rejected resource options removed from the card list (code kept in history).
+- Development / table cards, refined against the resource rules (rounds: `catan-cards-v2-dev-round1..3.png`,
+  `catan-monopoly-figure-options.png`, `catan-cards-v2-road-experiments.png`, `catan-road-building-tool-options.png`):
+  - Locked: Victory Point (the one trophy, solid handles); placement rule for single icons; Building Costs without
+    corner hexagons; every card drawing = white card with a solid black hexagon; Year of Plenty as it was;
+    one trophy row height on all table cards, picture 4 mm above it.
+  - Locked: Road Building = hammer crossed with a road of irregular, uneven cobbles (nothing left out).
+    Rejected: shovel (reads as digging), pickaxe (mining / ore), hammer + shovel crossed (loses the road),
+    both tools over a road (too busy).
+  - Longest Road: road of irregular cobbles, 4 runs at 20 degrees; wagon-wheel versions rejected (too busy).
+  - Open: Monopoly (crown above a fan with centre hexagons / figure behind the fan / fist holding cards).
 - Test: `catan-backs-showthrough-test.3mf` - Knight and Victory Point at 0.5 mm (left) and 0.6 mm (right).
