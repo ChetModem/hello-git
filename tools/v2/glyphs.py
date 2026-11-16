@@ -2048,3 +2048,52 @@ def longest_road11(bends=None, nudge=None, seed=4, space=0.85):
 
 def longest_road10(bends=None, seed=4, space=0.85):
     return centre(soften(cobbled_path10(winding_pts(4, 10.6, 20), ROAD_W, ROAD_STONE, bends=bends, seed=seed, space=space)))
+
+# ---------------------------------------------------------------- the set's own pieces, drawn flat (Building Costs)
+def own_settlement(h=7.6):
+    """Flat drawing of this set's settlement piece (front view): a pointed tower on the left, a lower gabled house
+    beside it, both on the round base (drawn as a slab). Parts split by 0.8 mm cuts like every icon."""
+    k = h / 20.3
+    base = box(-7.5, 0, 7.5, 2.2)
+    tower = Polygon([(-6.2, 2.2), (-1.4, 2.2), (-1.4, 15.0), (-3.8, 20.3), (-6.2, 15.0)])
+    house = Polygon([(-1.4, 2.2), (6.4, 2.2), (6.4, 10.0), (2.5, 13.8), (-1.4, 10.0)])
+    g = unary_union([base, tower, house])
+    cuts = unary_union([LineString([(-1.4, 2.2), (-1.4, 11.5)]).buffer(GAP / 2 / k, cap_style=2),
+                        LineString([(-7.6, 2.2), (7.6, 2.2)]).buffer(GAP / 2 / k, cap_style=2)])
+    g = affinity.scale(g.difference(cuts), k, k, origin=(0, 0))
+    return centre(soften(printable(g, w=0.6, speck=1.0), 0.3))
+
+def own_city(h=9.6):
+    """Flat drawing of this set's city piece (front view): a tall stepped centre tower with a spire, a domed tower
+    on the left, a gabled tower on the right, on the base slab. Parts split by 0.8 mm cuts."""
+    k = h / 27.1
+    base = box(-8.0, 0, 8.0, 2.2)
+    centre_t = unary_union([box(-3.0, 2.2, 3.0, 18.5), box(-2.0, 18.5, 2.0, 22.0), Polygon([(-2.0, 22.0), (2.0, 22.0), (0, 27.1)])])
+    left = unary_union([box(-7.6, 2.2, -3.0, 12.0), Point(-5.3, 12.0).buffer(2.3, quad_segs=24)])
+    right = unary_union([box(3.0, 2.2, 7.6, 13.5), Polygon([(3.0, 13.5), (7.6, 13.5), (5.3, 16.6)])])
+    g = unary_union([base, centre_t, left, right])
+    cuts = unary_union([LineString([(-3.0, 2.2), (-3.0, 16)]).buffer(GAP / 2 / k, cap_style=2),
+                        LineString([(3.0, 2.2), (3.0, 17)]).buffer(GAP / 2 / k, cap_style=2),
+                        LineString([(-8.1, 2.2), (8.1, 2.2)]).buffer(GAP / 2 / k, cap_style=2),
+                        LineString([(-2.0, 18.5), (2.0, 18.5)]).buffer(GAP / 2 / k, cap_style=2)])
+    g = affinity.scale(g.difference(cuts), k, k, origin=(0, 0))
+    return centre(soften(printable(g, w=0.6, speck=1.0), 0.3))
+
+def own_settlement2(h=7.6):
+    """Solid silhouette of this set's settlement: pointed tower on the left, lower gabled house beside it, on a base."""
+    k = h / 20.3
+    g = unary_union([box(-7.5, 0, 7.5, 2.6),
+                     Polygon([(-6.2, 2.6), (-1.0, 2.6), (-1.0, 14.6), (-3.6, 20.3), (-6.2, 14.6)]),
+                     Polygon([(-1.0, 2.6), (6.6, 2.6), (6.6, 10.0), (2.8, 13.9), (-1.0, 10.0)])])
+    return centre(soften(affinity.scale(g, k, k, origin=(0, 0)), 0.3))
+
+def own_city2(h=9.6):
+    """Solid silhouette of this set's city: tall stepped centre tower with a spire, domed tower left, gabled tower right."""
+    k = h / 27.1
+    g = unary_union([box(-8.0, 0, 8.0, 2.6),
+                     box(-3.0, 2.6, 3.0, 18.5), box(-2.0, 18.5, 2.0, 22.0), Polygon([(-2.0, 22.0), (2.0, 22.0), (0, 27.1)]),
+                     box(-7.8, 2.6, -3.0, 12.0), Point(-5.4, 12.0).buffer(2.4, quad_segs=24),
+                     box(3.0, 2.6, 7.8, 13.5), Polygon([(3.0, 13.5), (7.8, 13.5), (5.4, 16.8)])])
+    g = affinity.scale(g, k, k, origin=(0, 0))
+    g = g.buffer(-0.3, join_style=2).buffer(0.3, join_style=1)                    # nothing under 0.6 mm wide
+    return centre(soften(g, 0.3))
