@@ -104,3 +104,17 @@ Preview: `catan-cards-v2-preview.png`. Code: `tools/v2/`.
   every detail present (visor, stars, card hexagons, stones, helmets). v2 card designs complete; next: test prints,
   legend, print files.
 - Test: `catan-backs-showthrough-test.3mf` - Knight and Victory Point at 0.5 mm (left) and 0.6 mm (right).
+
+## Rules legend and stand v2 - `catan-rules-legend-with-stand-v2.3mf` (v1 kept: `catan-rules-legend-with-stand.3mf`)
+Preview: `catan-legend-v2.png` (read back from the file), stand: `catan-legend-stand-v2.png`. Code: `tools/v2/legend_v2.py`, `build_legend_v2.py`.
+- The exact v2 card icons (the v1 Monopoly icon had broken into dots at legend size); progress-card icons white with
+  green titles, as on the cards; icons at card size, so no shrinking of the 0.8 mm gaps.
+- Columns grouped by card type: Knight, Victory Point, Longest Road, Largest Army | Road Building, Year of Plenty,
+  Monopoly, then the cost key and the play rule.
+- Text DejaVu Bold 4.2 mm (titles 4.8 mm, wider letter spacing): every counter stays open, strokes ~0.8 mm.
+- Footer rule completed: "Development cards: play 1 per turn (not the turn you buy it). Victory Points: reveal any time to win."
+- Cost key with the v2 card drawing; border and divider at the set's 0.8 mm line weight.
+- Board 240 x 162.7 mm (was 117), fits the X2D bed.
+- Stand feet: point-up hexagon cut-out (prints without supports, walls >= 3.9 mm), 1.2 mm lead-in chamfer on the slot.
+  Still stable with the taller board (weight 21 mm behind the slot, foot reaches 35 mm).
+- File check: PASS (no pieces closer than 0.5 mm, no overlaps, no thin bits).
