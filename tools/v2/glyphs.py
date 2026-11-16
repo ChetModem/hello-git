@@ -1428,3 +1428,81 @@ def ore_rocks8(k=1.0, small_style='orig'):
     fb = unary_union([ln(p) for p in BIG_LINES['noright']])
     fs = unary_union([ln(p) for p in lines])
     return centre(soften(printable(unary_union([big.difference(fb), small.difference(fs)]), w=0.6, speck=1.0)))
+
+# ---------------------------------------------------------------- round D1: development / table refinement
+def sheep4(s=1.0, leg_extra=0.0, fleece_extra=0.0):
+    """Locked sheep (sheep3, head 'a') with longer legs and/or a taller fleece: raises the sheep's middle
+    while its feet stay on the shared bottom line."""
+    body = _cloud_sym(0, 1.2 * s, 9.2 * s, (8.6 + fleece_extra) * s, 11, 3.2 * s).buffer(0.6, join_style=1).buffer(-0.6, join_style=1)
+    unit, head = sheep_head(s, 'a')
+    unit = affinity.translate(unit, 0, -0.6 * s)
+    body = body.difference(unit.buffer(LINE, join_style=1))
+    up = lambda g: affinity.translate(g, 0, (leg_extra + fleece_extra) * s)
+    body, unit = up(body), up(unit)
+    legs = unary_union([box(sd * 3.8 * s - 1.6 * s, -14.5 * s, sd * 3.8 * s + 1.6 * s, (-8.6 + leg_extra + fleece_extra) * s) for sd in (-1, 1)])
+    legs = legs.difference(unary_union([body, unit]).buffer(LINE))
+    g = soften(printable(unary_union([body, unit, legs]), w=0.6, speck=0.6))
+    b = g.bounds; return affinity.translate(g, 0, -(b[1] + b[3]) / 2)
+
+def card_solid(w, h, hy=0.0):
+    """Development-card drawing: white rounded card with a solid black hexagon cut out of it (hy: hexagon height on the card)."""
+    body = rr(-w / 2, -h / 2, w / 2, h / 2, min(0.9, w * 0.12))
+    return body.difference(hexagon(0, hy, w * 0.52))
+
+def crown3(w):
+    """crown2 without the ball tips: three solid rounded points over a solid band."""
+    h = w * 0.7; band_h = h * 0.26
+    band = rr(-w / 2, -h / 2, w / 2, -h / 2 + band_h, min(0.6, w * 0.05))
+    y0 = -h / 2 + band_h + GAP
+    tips = [(-w / 2 + w * 0.04, h * 0.30), (0, h * 0.48), (w / 2 - w * 0.04, h * 0.30)]
+    valleys = [(-w * 0.22, y0 + h * 0.20), (w * 0.22, y0 + h * 0.20)]
+    body = Polygon([(-w / 2, y0), tips[0], valleys[0], tips[1], valleys[1], tips[2], (w / 2, y0)])
+    return centre(unary_union([band, soften(body, 0.5)]))
+
+ROAD_W, ROAD_STONE = 7.4, 5.0          # one road for every card: two rows of stones, each ~3.3 x 4.2 mm
+def road_hammer2(k=1.0):
+    """Road Building, built at final size: road of ROAD_W / ROAD_STONE stones (gaps fixed), thicker hammer."""
+    r = affinity.rotate(cobbled_path([(-14.0 * k, 0), (14.0 * k, 0)], ROAD_W, ROAD_STONE), 45, origin=(0, 0))
+    hm = affinity.rotate(hammer2(25.0 * k, 3.7), 45, origin=(0, 0))
+    r = r.difference(hm.buffer(GAP, join_style=1))
+    return centre(soften(printable(unary_union([r, hm]), w=0.6, speck=2.0)))
+
+def longest_road2(n=4, seg=10.6):
+    """Longest Road path: the same road (width and stones) as Road Building, fewer and longer runs."""
+    return centre(soften(cobbled_winding2(n, seg, ROAD_W, ROAD_STONE)))
+
+def cobbled_path3(pts, width, stone, margin=0.75):
+    """cobbled_path2 with no stone joint closer than margin*stone to a bend or end, so no chips form at the bends."""
+    line = LineString(pts)
+    body = line.buffer(width / 2, cap_style=2, join_style=2, mitre_limit=4)
+    joints = [line.buffer(GAP / 2, cap_style=2)]
+    for i in range(1, len(pts) - 1):
+        (x0, y0), (x1, y1), (x2, y2) = pts[i - 1], pts[i], pts[i + 1]
+        u = np.array([x1 - x0, y1 - y0]); u /= np.linalg.norm(u); v = np.array([x2 - x1, y2 - y1]); v /= np.linalg.norm(v)
+        bis = u + v; nrm = np.array([-bis[1], bis[0]]); nrm /= np.linalg.norm(nrm)
+        joints.append(LineString([(x1 - nrm[0] * width, y1 - nrm[1] * width), (x1 + nrm[0] * width, y1 + nrm[1] * width)]).buffer(GAP / 2, cap_style=2))
+    for i in range(len(pts) - 1):
+        (x0, y0), (x1, y1) = pts[i], pts[i + 1]
+        seg = np.hypot(x1 - x0, y1 - y0); ux, uy = (x1 - x0) / seg, (y1 - y0) / seg; nx, ny = -uy, ux
+        for side, start in ((1, stone * 0.5), (-1, stone)):
+            s = start
+            while s < seg - stone * margin:
+                if s > stone * margin:
+                    px, py = x0 + ux * s, y0 + uy * s
+                    joints.append(LineString([(px, py), (px + side * nx * width, py + side * ny * width)]).buffer(GAP / 2, cap_style=2))
+                s += stone
+    return printable(body.difference(unary_union(joints)).buffer(0), w=0.6, speck=0.8)
+
+def longest_road3(n=4, seg=10.6, angle=30):
+    pts = [(0.0, 0.0)]
+    for kk in range(n):
+        a = angle if kk % 2 == 0 else -angle
+        x, y = pts[-1]; pts.append((x + seg * np.cos(np.radians(a)), y + seg * np.sin(np.radians(a))))
+    return centre(soften(cobbled_path3(pts, ROAD_W, ROAD_STONE)))
+
+def road_hammer3(k=1.0):
+    """road_hammer2, with stone fragments under ~6 mm2 left out where the hammer covers the road."""
+    r = affinity.rotate(cobbled_path([(-14.0 * k, 0), (14.0 * k, 0)], ROAD_W, ROAD_STONE), 45, origin=(0, 0))
+    hm = affinity.rotate(hammer2(25.0 * k, 3.7), 45, origin=(0, 0))
+    r = unary_union([p for p in pieces(r.difference(hm.buffer(GAP, join_style=1))) if p.area >= 6.0])
+    return centre(soften(printable(unary_union([r, hm]), w=0.6, speck=2.0)))

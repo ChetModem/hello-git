@@ -68,22 +68,24 @@ def merge(*dicts):
 ZONE = G.safe_zone()
 G.GAP = G.LINE          # v2 final pass: every card uses the resource set's 0.8 mm lines and gaps
 
-def fanned_cards(colours, w=8.6, h=12.0, spread=16.0, dx=5.0):
-    """Cards fanned left to right (later ones in front). colours: list of hex slots (None = development card)."""
-    n = len(colours); out = {}; prev = Polygon()
-    shapes = []
-    for i, col in enumerate(colours):
-        a = spread * (i - (n - 1) / 2)
-        body, hx = G.card(w, h, col is not None)
-        body = affinity.rotate(affinity.translate(body, (i - (n - 1) / 2) * dx, 0), -a, origin=((i - (n - 1) / 2) * dx, -h * 0.9))
-        if hx is not None: hx = affinity.rotate(affinity.translate(hx, (i - (n - 1) / 2) * dx, 0), -a, origin=((i - (n - 1) / 2) * dx, -h * 0.9))
-        shapes.append((body, hx, col))
-    for i, (body, hx, col) in enumerate(shapes):        # each card cut back where the cards in front of it sit
-        front = unary_union([Polygon(q.exterior) for s in shapes[i + 1:] for q in G.pieces(s[0])]) if i + 1 < n else Polygon()
+def fanned_cards(colours, w=8.6, h=12.0, spread=16.0, dx=5.0, hy=0.0, blocker=None):
+    """Cards fanned left to right (later ones in front), drawn like every card in the set: white card, solid black
+    hexagon. A hexagon is only cut where all of it shows; a card whose hexagon would be covered stays plain white."""
+    n = len(colours); shapes = []
+    for i in range(n):
+        a = spread * (i - (n - 1) / 2); ox = (i - (n - 1) / 2) * dx; org = (ox, -h * 0.9)
+        body = affinity.rotate(affinity.translate(G.rr(-w / 2, -h / 2, w / 2, h / 2, min(0.9, w * 0.12)), ox, 0), -a, origin=org)
+        hx = affinity.rotate(affinity.translate(G.hexagon(0, hy, w * 0.52), ox, 0), -a, origin=org)
+        shapes.append((body, hx))
+    out = Polygon()
+    for i, (body, hx) in enumerate(shapes):
+        front = unary_union([s_[0] for s_ in shapes[i + 1:]]) if i + 1 < n else Polygon()
+        if blocker is not None: front = unary_union([front, blocker])
         cut = front.buffer(G.GAP, join_style=1) if not front.is_empty else Polygon()
-        out = merge(out, {WHITE: body.difference(cut)})
-        if hx is not None: out = merge(out, {col: hx.difference(cut)})
-    return out
+        vis = body.difference(cut)
+        if hx.buffer(G.GAP).within(vis): vis = vis.difference(hx)
+        out = unary_union([out, vis])
+    return {WHITE: out}
 
 # ---------------------------------------------------------------- development cards
 def knight():
@@ -91,52 +93,66 @@ def knight():
     for h in np.arange(31.0, 18.0, -0.2):
         g, k = G.fit_zone(G.helmet(h))
         if g.area <= KNIGHT_WEIGHT: return {PURPLE: g}, PURPLE
+VP_WEIGHT = 285.0
 def victory_point():
-    g, k = G.fill_zone(G.trophy_open(25.1)); return {ORANGE: g}, ORANGE
+    """The one trophy (solid handles, black star), sized by weight like the resource icons."""
+    for hgt in np.arange(26.0, 15.0, -0.2):
+        g = G.trophy(hgt)
+        if g.area <= VP_WEIGHT and ZONE.contains(g): return {ORANGE: g}, ORANGE
 def road_building():
-    z, k = G.fill_zone(G.road_hammer_cobbled()); return {WHITE: z}, GREEN
+    """Road (same stones as Longest Road) crossed with a hammer, built at final size."""
+    for k in np.arange(1.2, 0.6, -0.01):
+        g = G.road_hammer3(k)
+        if ZONE.contains(g): return {WHITE: g}, GREEN
 def year_of_plenty():
     """Same card size as Monopoly's (built at final size)."""
     monopoly(); s_ = yop_card_scale() * monopoly.scale_note
-    f = fanned_cards([None, None], w=11.0 * s_, h=15.4 * s_, spread=14.0, dx=6.4 * s_)
+    f = fanned_cards([None, None], w=11.0 * s_, h=15.4 * s_, spread=14.0, dx=YOP_DX * s_)
     allg = unary_union(list(f.values())); b = allg.bounds
     return {k: place(v, -(b[0] + b[2]) / 2, -(b[1] + b[3]) / 2) for k, v in f.items()}, GREEN
 def yop_card_scale():
-    f = fanned_cards([None, None], w=11.0, h=15.4, spread=14.0, dx=6.4)
+    f = fanned_cards([None, None], w=11.0, h=15.4, spread=14.0, dx=YOP_DX)
     allg = unary_union(list(f.values())); _, s_ = G.fill_zone(allg); return s_
-MONO_OVERLAP = 0.5
+YOP_DX = 7.4                     # far enough apart that both solid hexagons show whole
+MONO_OVERLAP = 0.45
 def monopoly_at(s_):
     w, h = 11.0 * s_, 15.4 * s_
-    f = fanned_cards([None, None, None], w=w, h=h, spread=12.0, dx=3.2 * s_)
-    cards = unary_union(list(f.values())); cb = cards.bounds
-    cr = G.crown2(w * 1.35); crb = cr.bounds
+    plain = fanned_cards([None, None, None], w=w, h=h, spread=12.0, dx=3.2 * s_)[WHITE]
+    cb = plain.bounds
+    cr = G.crown3(w * 1.35); crb = cr.bounds
     ov = MONO_OVERLAP * (crb[3] - crb[1])
     cr = place(cr, (cb[0] + cb[2]) / 2 - (crb[0] + crb[2]) / 2, cb[3] - ov - crb[1])        # crown resting on the fan
-    hull = cr.convex_hull.buffer(G.GAP, join_style=1)
-    cards = unary_union([p for p in G.pieces(cards.difference(hull)) if p.area > 1.0])     # clean cut, no slivers
+    hull = cr.convex_hull
+    cards = fanned_cards([None, None, None], w=w, h=h, spread=12.0, dx=3.2 * s_, hy=-h * 0.17, blocker=hull)[WHITE]
+    cards = unary_union([p for p in G.pieces(cards) if p.area > 2.0])
     g = unary_union([cards, cr]); b = g.bounds
     return place(g, -(b[0] + b[2]) / 2, -(b[1] + b[3]) / 2)
 def monopoly():
-    """Built at its final size (no shrinking afterwards, so the 0.7 mm lines and gaps stay 0.7 mm)."""
+    """Built at its final size (no shrinking afterwards, so the 0.8 mm lines and gaps stay 0.8 mm)."""
     yop = yop_card_scale(); s_ = yop
     while s_ > 0.4 and not ZONE.contains(monopoly_at(s_)): s_ -= 0.01
     monopoly.scale_note = s_ / yop
     return {WHITE: G.printable(monopoly_at(s_), w=0.6, speck=0.8)}, GREEN
 
 # ---------------------------------------------------------------- table cards
-TROPHY_Y, TROPHY_H = -15.0, 12.5
+TROPHY_H, TABLE_GAP = 12.5, 4.0
 def trophies():
     t = G.trophy(TROPHY_H)
     w = t.bounds[2] - t.bounds[0]
-    return unary_union([place(t, -(w / 2 + 1.6), TROPHY_Y), place(t, w / 2 + 1.6, TROPHY_Y)])
+    return unary_union([place(t, -(w / 2 + 1.6), 0), place(t, w / 2 + 1.6, 0)])
+def table_layout(top_slot, top):
+    """Table cards: the card's picture, TABLE_GAP above the pair of trophies, the whole group centred on the card."""
+    tr = trophies(); tb = tr.bounds; t = G.centre(top)
+    t = place(t, 0, tb[3] + TABLE_GAP - t.bounds[1])
+    allg = unary_union([t, tr]); b = allg.bounds; dy = -(b[1] + b[3]) / 2
+    return {top_slot: place(t, 0, dy), ORANGE: place(tr, 0, dy)}, ORANGE
 def longest_road():
-    chain = G.cobbled_winding2(5, 8.8, 6.8, 4.2)
-    return {WHITE: place(chain, 0, 6.0), ORANGE: trophies()}, ORANGE
+    return table_layout(WHITE, G.longest_road3(4, 10.6))
 def largest_army():
-    big = G.helmet(22.0); small = G.helmet(15.5); base = -6.0; gap = 1.4
+    big = G.helmet(22.0); small = G.helmet(15.5); gap = 1.4
     wb = big.bounds[2] - big.bounds[0]; ws = small.bounds[2] - small.bounds[0]
-    h = unary_union([place(big, 0, base - big.bounds[1])] + [place(small, sd * (wb / 2 + gap + ws / 2), base - small.bounds[1]) for sd in (-1, 1)])
-    return {PURPLE: h, ORANGE: trophies()}, ORANGE
+    h = unary_union([place(big, 0, -big.bounds[1])] + [place(small, sd * (wb / 2 + gap + ws / 2), -small.bounds[1]) for sd in (-1, 1)])
+    return table_layout(PURPLE, h)
 def building_costs():
     """Rows: piece on the left, one hexagon per resource card it costs (the layout you preferred)."""
     rows = [('road', ['brick', 'wood']), ('settlement', ['brick', 'wood', 'wheat', 'sheep']),
@@ -145,7 +161,7 @@ def building_costs():
     piece = {'road': affinity.rotate(G.road_piece(), 30, origin=(0, 0)),
              'settlement': affinity.scale(V1.p_settlement(), 1.25, 1.25, origin=(0, 0)),
              'city': affinity.scale(V1.p_city(), 1.25, 1.25, origin=(0, 0)),
-             'dev': G.card(6.0, 8.4, False)[0]}
+             'dev': G.card_solid(6.0, 8.4)}
     out = {}
     for i, (p, res) in enumerate(rows):
         y = 21.0 - i * 14.0
@@ -180,7 +196,8 @@ CARDS = {
 }
 SINGLE_ICON = {'Knight', 'Victory Point', 'Road Building', 'Year of Plenty', 'Monopoly'}
 KNIGHT_WEIGHT = 300.0
-SPECK = {'Building Costs': 1.0}     # keeps the small hexagon inside its development-card drawing
+TALL_LINE, WIDE_LINE = RES_ICONS['wood'].bounds[1], RES_ICONS['brick'].bounds[1]
+SPECK = {}
 def finish(name, face):
     """Same finishing rules as the resource set: 0.3 mm rounded tips, no specks under 2 mm2,
     single development icons centred on their weight (like the resource icons)."""
@@ -188,8 +205,11 @@ def finish(name, face):
     for k, v in face.items():
         v = G.soften(v, 0.3)
         out[k] = unary_union([p for p in G.pieces(v) if p.area >= SPECK.get(name, 2.0)])
-    if name in SINGLE_ICON:
-        allg = unary_union(list(out.values())); b = allg.bounds; dy = -(allg.centroid.y + (b[1] + b[3]) / 2) / 2   # halfway, as for the ore
+    if name in SINGLE_ICON:          # the resource placement rule
+        allg = unary_union(list(out.values())); b = allg.bounds; hgt = b[3] - b[1]
+        if hgt >= 24.5: dy = TALL_LINE - b[1]          # tall icons stand on the tall line
+        elif hgt <= 18.0: dy = WIDE_LINE - b[1]        # low wide icons on the wide line
+        else: dy = -(b[1] + b[3]) / 2                  # in between: centred
         out = {k: affinity.translate(v, 0, dy) for k, v in out.items()}
     return out
 def build(name):
