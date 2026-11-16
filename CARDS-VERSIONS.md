@@ -77,4 +77,11 @@ Preview: `catan-cards-v2-preview.png`. Code: `tools/v2/`.
   - Locked: Year of Plenty sized by weight like every icon (its cards larger than Monopoly's; matching Monopoly's
     card size would leave it at ~106 mm2). Size options: `catan-year-of-plenty-size-options.png`.
   - Resource sheep updated: legs and fleece raised so it is centred on its weight (feet still on the shared line).
+    Fix: the first version of this lost the black split under the chin (the head did not move down with the taller
+    fleece); the head now moves with it and the split is back (`catan-sheep-chin-fix.png`). Every resource icon was
+    then checked against its approved version: all identical, and the cards use them unchanged.
+  - Building Costs: original Catan piece shapes kept (clearer, match the rulebook, work for anyone printing the files
+    without this set's pieces); pieces right-aligned so every row has the same gap before its hexagons; road piece
+    standing near vertical (80 degrees). The set's own pieces were tried (`catan-building-costs-own-pieces.png`) and dropped.
+  - Knight helmet brought to the set's weight (275 mm2).
 - Test: `catan-backs-showthrough-test.3mf` - Knight and Victory Point at 0.5 mm (left) and 0.6 mm (right).

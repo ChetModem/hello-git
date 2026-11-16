@@ -2106,3 +2106,17 @@ def road_piece_top():
     k = 9.6 / 27.1; g = affinity.scale(g, k, k, origin=(0, 0)).simplify(0.12)
     g = g.buffer(-0.45, join_style=1).buffer(0.45, join_style=1)
     return soften(max(pieces(g), key=lambda p: p.area), 0.3)
+
+def sheep5(s=1.0, leg_extra=1.0, fleece_extra=1.0):
+    """sheep4 (option 4) with the head moved down with the taller fleece, so the chin still meets the bottom of the
+    fleece and the black split under the chin is kept (as in the round-5/6 sheep)."""
+    body = _cloud_sym(0, 1.2 * s, 9.2 * s, (8.6 + fleece_extra) * s, 11, 3.2 * s).buffer(0.6, join_style=1).buffer(-0.6, join_style=1)
+    unit, head = sheep_head(s, 'a')
+    unit = affinity.translate(unit, 0, (-0.6 - fleece_extra) * s)
+    body = body.difference(unit.buffer(LINE, join_style=1))
+    up = lambda g: affinity.translate(g, 0, (leg_extra + fleece_extra) * s)
+    body, unit = up(body), up(unit)
+    legs = unary_union([box(sd * 3.8 * s - 1.6 * s, -14.5 * s, sd * 3.8 * s + 1.6 * s, (-8.6 + leg_extra + fleece_extra) * s) for sd in (-1, 1)])
+    legs = legs.difference(unary_union([body, unit]).buffer(LINE))
+    g = soften(printable(unary_union([body, unit, legs]), w=0.6, speck=0.6))
+    b = g.bounds; return affinity.translate(g, 0, -(b[1] + b[3]) / 2)

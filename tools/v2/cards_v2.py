@@ -177,11 +177,12 @@ def largest_army(gap=None):
     h = unary_union([place(big, 0, -big.bounds[1])] + [place(small, sd * (wb / 2 + gap + ws / 2), -small.bounds[1]) for sd in (-1, 1)])
     return table_layout(PURPLE, h)
 BC_PIECES = 'original'            # 'original' Catan shapes or 'own' (this set's printed pieces, drawn flat)
+BC_ROAD_ANGLE = 80.0               # road piece 10 degrees off vertical
 BC_GAP = 1.6                      # every piece ends the same distance before its first hexagon
 def bc_pieces(kind):
     if kind == 'own':
         return {'road': G.road_piece_top(), 'settlement': G.own_settlement2(8.2), 'city': G.own_city2(10.0), 'dev': G.card_solid(6.0, 8.4)}
-    return {'road': G.road_piece(),                                              # upright: lying level like the other rows
+    return {'road': affinity.rotate(G.road_piece(), BC_ROAD_ANGLE, origin=(0, 0)),     # standing near vertical
             'settlement': affinity.scale(V1.p_settlement(), 1.25, 1.25, origin=(0, 0)),
             'city': affinity.scale(V1.p_city(), 1.25, 1.25, origin=(0, 0)), 'dev': G.card_solid(6.0, 8.4)}
 def building_costs(kind=None):
