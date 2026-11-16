@@ -1810,3 +1810,52 @@ def cobbled_path7(pts, width, stone, cutter=None, min_stone=6.0, seed=3, var=0.1
 
 def longest_road7(n=4, seg=10.6, angle=20, seed=3, var=0.15):
     return centre(soften(cobbled_path7(winding_pts(n, seg, angle), ROAD_W, ROAD_STONE, seed=seed, var=var)))
+
+# ---------------------------------------------------------------- round D8: offset joints at the bends
+def cobbled_path8(pts, width, stone, cutter=None, min_stone=6.0, seed=3, var=0.15, stagger=0.3, bend_shift=0.45):
+    """cobbled_path7, but the joint at each bend is split: one row keeps the joint on the bend, the other row's
+    joint sits bend_shift x stone further along (alternating which row from bend to bend), so no joint runs
+    straight across the whole road at a bend."""
+    rng = np.random.default_rng(seed)
+    line = LineString(pts)
+    body = line.buffer(width / 2, cap_style=2, join_style=2, mitre_limit=4)
+    fixed = [line.buffer(GAP / 2, cap_style=2)]
+    for i in range(1, len(pts) - 1):
+        (x0, y0), (x1, y1), (x2, y2) = pts[i - 1], pts[i], pts[i + 1]
+        u = np.array([x1 - x0, y1 - y0]); u /= np.linalg.norm(u); v = np.array([x2 - x1, y2 - y1]); v /= np.linalg.norm(v)
+        bis = u + v; nrm = np.array([-bis[1], bis[0]]); nrm /= np.linalg.norm(nrm)
+        keep = 1 if i % 2 else -1                                   # which side keeps the joint on the bend
+        if np.dot(nrm, [-v[1], v[0]]) < 0: nrm = -nrm               # nrm points to the +1 side of the next run
+        fixed.append(LineString([(x1, y1), (x1 + keep * nrm[0] * width, y1 + keep * nrm[1] * width)]).buffer(GAP / 2, cap_style=2))
+        p = np.array([x1, y1]) + v * stone * bend_shift; n2 = np.array([-v[1], v[0]])
+        fixed.append(LineString([tuple(p), tuple(p - keep * n2 * width)]).buffer(GAP / 2, cap_style=2))
+    if cutter is not None: fixed.append(cutter)
+    stones = []
+    for i in range(len(pts) - 1):
+        (x0, y0), (x1, y1) = pts[i], pts[i + 1]
+        seg = np.hypot(x1 - x0, y1 - y0); ux, uy = (x1 - x0) / seg, (y1 - y0) / seg; nx, ny = -uy, ux
+        row_a = []
+        for side in (1, -1):
+            s = stone * (rng.uniform(0.75, 1.0) if side > 0 else rng.uniform(0.35, 0.6))
+            while s < seg - stone * 0.45:
+                if side < 0:
+                    for a in row_a:
+                        if abs(s - a) < stagger * stone: s = a + stagger * stone * (1 if s >= a else -1)
+                lo = stone * (0.35 + (bend_shift if i > 0 else 0))
+                if lo < s < seg - stone * 0.45:
+                    px, py = x0 + ux * s, y0 + uy * s
+                    stones.append(LineString([(px, py), (px + side * nx * width, py + side * ny * width)]).buffer(GAP / 2, cap_style=2))
+                    if side > 0: row_a.append(s)
+                s += stone * rng.uniform(1 - var, 1 + var)
+    fx = unary_union(fixed)
+    for _ in range(60):
+        g = body.difference(unary_union([fx] + stones)).buffer(0)
+        small = [p for p in pieces(g) if p.area < min_stone]
+        if not small or not stones: break
+        p = small[0]; j = min(range(len(stones)), key=lambda q: stones[q].distance(p))
+        if stones[j].distance(p) > GAP: break
+        stones.pop(j)
+    return printable(body.difference(unary_union([fx] + stones)).buffer(0), w=0.6, speck=0.8)
+
+def longest_road8(n=4, seg=10.6, angle=20, seed=4, var=0.15, bend_shift=0.45):
+    return centre(soften(cobbled_path8(winding_pts(n, seg, angle), ROAD_W, ROAD_STONE, seed=seed, var=var, bend_shift=bend_shift)))
