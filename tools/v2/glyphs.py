@@ -1978,5 +1978,73 @@ def cobbled_path10(pts, width, stone, bends=None, min_stone=6.0, seed=4, var=0.1
         stones.pop(j)
     return printable(body.difference(unary_union([fx] + stones)).buffer(0), w=0.6, speck=0.8)
 
+def cobbled_path11(pts, width, stone, bends=None, min_stone=6.0, seed=4, var=0.15, stagger=0.3, bend_shift=0.45, space=0.85, nudge=None):
+    """cobbled_path10 plus nudge = {(run, side, k): stones}: moves the k-th stone joint of that row in that run along
+    the road by that much (placement only; the rest of the road is unchanged).
+    cobbled_path9 plus optional joints just BEFORE a bend: bends = {i: dict(up=, lo=, up_pre=, lo_pre=)} in stones
+    (up/lo along the next run as before; *_pre = that far back along the previous run, square to it). Other joints in the
+    same row keep `space` stones clear of these, so the stones around the bend stay a normal size."""
+    rng = np.random.default_rng(seed)
+    line = LineString(pts)
+    body = line.buffer(width / 2, cap_style=2, join_style=2, mitre_limit=4)
+    fixed = [line.buffer(GAP / 2, cap_style=2)]
+    after, before = {}, {}                                   # (run, side) -> joint position after the bend / before it
+    for i in range(1, len(pts) - 1):
+        (x0, y0), (x1, y1), (x2, y2) = pts[i - 1], pts[i], pts[i + 1]
+        u = np.array([x1 - x0, y1 - y0]); u /= np.linalg.norm(u); v = np.array([x2 - x1, y2 - y1]); v /= np.linalg.norm(v)
+        bis = u + v; nrm = np.array([-bis[1], bis[0]]); nrm /= np.linalg.norm(nrm)
+        n1 = np.array([-u[1], u[0]]); n2 = np.array([-v[1], v[0]])
+        if np.dot(nrm, n2) < 0: nrm = -nrm
+        keep = 1 if i % 2 else -1
+        cfg = (bends or {}).get(i)
+        if cfg is None: cfg = {'up': 0.0 if keep == 1 else bend_shift, 'lo': 0.0 if keep == -1 else bend_shift}
+        for side, key in ((1, 'up'), (-1, 'lo')):
+            sh = cfg.get(key, 0.0)
+            if sh == 0:
+                fixed.append(LineString([(x1, y1), (x1 + side * nrm[0] * width, y1 + side * nrm[1] * width)]).buffer(GAP / 2, cap_style=2))
+            else:
+                p = np.array([x1, y1]) + v * stone * sh
+                fixed.append(LineString([tuple(p), tuple(p + side * n2 * width)]).buffer(GAP / 2, cap_style=2))
+            after[(i, side)] = sh
+            pre = cfg.get(key + '_pre')
+            if pre:
+                p = np.array([x1, y1]) - u * stone * pre
+                fixed.append(LineString([tuple(p), tuple(p + side * n1 * width)]).buffer(GAP / 2, cap_style=2))
+                before[(i - 1, side)] = pre
+    stones = []
+    for i in range(len(pts) - 1):
+        (x0, y0), (x1, y1) = pts[i], pts[i + 1]
+        seg = np.hypot(x1 - x0, y1 - y0); ux, uy = (x1 - x0) / seg, (y1 - y0) / seg; nx, ny = -uy, ux
+        row_a = []
+        for side in (1, -1):
+            kth = 0
+            s = stone * (rng.uniform(0.75, 1.0) if side > 0 else rng.uniform(0.35, 0.6))
+            a0 = after.get((i, side))
+            lo = stone * (0.35 if a0 is None or a0 == 0 else max(0.35, a0 + space))
+            b0 = before.get((i, side))
+            hi = seg - stone * (0.45 if b0 is None else max(0.45, b0 + space))
+            while s < seg - stone * 0.45:
+                if side < 0:
+                    for a in row_a:
+                        if abs(s - a) < stagger * stone: s = a + stagger * stone * (1 if s >= a else -1)
+                if lo < s < hi:
+                    sp = s + stone * (nudge or {}).get((i, side, kth), 0.0); kth += 1
+                    px, py = x0 + ux * sp, y0 + uy * sp
+                    stones.append(LineString([(px, py), (px + side * nx * width, py + side * ny * width)]).buffer(GAP / 2, cap_style=2))
+                    if side > 0: row_a.append(s)
+                s += stone * rng.uniform(1 - var, 1 + var)
+    fx = unary_union(fixed)
+    for _ in range(60):
+        g = body.difference(unary_union([fx] + stones)).buffer(0)
+        small = [p for p in pieces(g) if p.area < min_stone]
+        if not small or not stones: break
+        p = small[0]; j = min(range(len(stones)), key=lambda q: stones[q].distance(p))
+        if stones[j].distance(p) > GAP: break
+        stones.pop(j)
+    return printable(body.difference(unary_union([fx] + stones)).buffer(0), w=0.6, speck=0.8)
+
+def longest_road11(bends=None, nudge=None, seed=4, space=0.85):
+    return centre(soften(cobbled_path11(winding_pts(4, 10.6, 20), ROAD_W, ROAD_STONE, bends=bends, seed=seed, space=space, nudge=nudge)))
+
 def longest_road10(bends=None, seed=4, space=0.85):
     return centre(soften(cobbled_path10(winding_pts(4, 10.6, 20), ROAD_W, ROAD_STONE, bends=bends, seed=seed, space=space)))
