@@ -119,7 +119,7 @@ def road_building():
     """Road (same stones as Longest Road) crossed with a hammer, built at final size."""
     for k in np.arange(1.2, 0.6, -0.01):
         g = G.road_tool6(k, 'hammer')
-        if ZONE.contains(g): return {WHITE: g}, GREEN
+        if ZONE.contains(place(g, 0, -g.centroid.y)): return {WHITE: g}, GREEN     # sized where it stands (centred on its weight)
 CARD_W, CARD_H = 11.0, 15.4      # the card drawing's proportions (scaled by s_)
 FAN_EXTRA = 1.2                  # fixed extra spacing in a fan: the 0.8 mm gaps do not shrink with the drawing
 YOP_DX = 7.4                     # Year of Plenty card spacing (scaled), as before
@@ -251,7 +251,7 @@ def finish(name, face):
         allg = unary_union(list(out.values())); b = allg.bounds; hgt = b[3] - b[1]
         if hgt >= 24.5: dy = TALL_LINE - b[1]          # tall icons stand on the tall line
         elif hgt <= 18.0: dy = WIDE_LINE - b[1]        # low wide icons on the wide line
-        else: dy = -(b[1] + b[3]) / 2                  # in between: centred
+        else: dy = -allg.centroid.y                    # in between: centred on its weight (as the sheep)
         out = {k: affinity.translate(v, 0, dy) for k, v in out.items()}
     return out
 def build(name):
