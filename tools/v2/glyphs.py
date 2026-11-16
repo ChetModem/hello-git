@@ -1721,3 +1721,49 @@ def road_two_tools(k=1.0, seed=5):
     road = road.difference(tools.buffer(GAP, join_style=1))
     road = unary_union([p for p in pieces(road) if p.area >= 8.0])
     return centre(soften(printable(unary_union([road, tools]), w=0.6, speck=2.0)))
+
+# ---------------------------------------------------------------- round D6: Road Building tools
+def pickaxe(length, width):
+    """Pickaxe pointing up: straight handle, curved head across the top, tapered to blunt points both ends."""
+    hw = width * 0.6; yt = length / 2
+    handle = rr(-hw / 2, -length / 2, hw / 2, yt - width * 0.4, hw * 0.45)
+    span = width * 4.2; th = width * 0.95
+    arc = LineString([(-span / 2, yt - th * 1.6), (-span * 0.25, yt - th * 0.55), (0, yt - th * 0.3), (span * 0.25, yt - th * 0.55), (span / 2, yt - th * 1.6)])
+    head = arc.buffer(th / 2, cap_style=1, join_style=1)
+    tips = unary_union([Point(sd * span / 2, yt - th * 1.6).buffer(th * 0.22) for sd in (-1, 1)])
+    head = unary_union([head.difference(unary_union([box(sd * span / 2 - (1 if sd > 0 else -1) * 0, -99, sd * 99, 99) for sd in (-1, 1)])), tips])
+    eye = rr(-hw * 0.9, yt - th * 1.2, hw * 0.9, yt, 0.3)
+    return soften(unary_union([handle, head, eye]), 0.3)
+
+def road_tool7(k=1.0, tool='hammer', seed=5):
+    L = 28.0 * k
+    tl = {'hammer': hammer2, 'shovel': shovel, 'pickaxe': pickaxe}[tool](25.0 * k, 3.7)
+    r = cobbled_path6([(-L / 2, 0), (L / 2, 0)], ROAD_W, ROAD_STONE, cutter=tl.buffer(GAP, join_style=1), seed=seed)
+    g = affinity.rotate(unary_union([r, tl]), 45, origin=(0, 0))
+    return centre(soften(printable(g, w=0.6, speck=2.0)))
+
+def tools_crossed(k=1.0, with_road=False, seed=5):
+    """Hammer and shovel crossed in an X (hammer in front); optionally over a short gentle stretch of road below."""
+    hm = affinity.rotate(hammer2(25.0 * k, 3.7), -45, origin=(0, 0))
+    sv = affinity.rotate(shovel(25.0 * k, 3.7), 45, origin=(0, 0))
+    sv = sv.difference(hm.buffer(GAP, join_style=1))
+    g = unary_union([hm, sv])
+    if with_road:
+        g = affinity.scale(g, 0.78, 0.78, origin=(0, 0)) if False else unary_union([affinity.rotate(hammer2(20.0 * k, 3.3), -45, origin=(0, 0)),
+                                                                                 affinity.rotate(shovel(20.0 * k, 3.3), 45, origin=(0, 0)).difference(affinity.rotate(hammer2(20.0 * k, 3.3), -45, origin=(0, 0)).buffer(GAP, join_style=1))])
+        b = g.bounds
+        road = centre(soften(cobbled_path6(winding_pts(2, 13.0 * k, 12), ROAD_W, ROAD_STONE, seed=seed)))
+        road = affinity.translate(road, 0, b[1] - (road.bounds[3]) - GAP * 2.5)
+        g = unary_union([g, road])
+    return centre(soften(printable(g, w=0.6, speck=2.0)))
+
+def pickaxe(length, width):
+    """Pickaxe pointing up: straight handle, a symmetrical curved head across the top tapering to blunt points."""
+    hw = width * 0.6; yt = length / 2
+    handle = rr(-hw / 2, -length / 2, hw / 2, yt - width * 0.6, hw * 0.45)
+    span = width * 4.4; th = width * 0.95; drop = width * 1.1
+    xs = np.linspace(-1, 1, 41)
+    top = [(x * span / 2, yt - drop * x * x) for x in xs]
+    bot = [(x * span / 2, yt - drop * x * x - th * (1 - 0.82 * abs(x) ** 1.6)) for x in xs[::-1]]
+    head = Polygon(top + bot).buffer(0)
+    return soften(unary_union([handle, head]), 0.3)
