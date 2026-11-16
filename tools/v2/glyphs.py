@@ -2129,3 +2129,14 @@ def road_tool8(k=1.0, seed=5):
     r = cobbled_path7([(-L / 2, 0), (L / 2, 0)], ROAD_W, ROAD_STONE, cutter=tl.buffer(GAP, join_style=1), seed=seed)
     g = affinity.rotate(unary_union([r, tl]), 45, origin=(0, 0))
     return centre(soften(printable(g, w=0.6, speck=2.0)))
+
+def road_tool6_trim(k, trim, seed=5):
+    """The round-3 Road Building (road_tool6, approved) with `trim` mm taken off each end of the road only:
+    every joint stays where it was; the end stones get a little shorter."""
+    L = 28.0 * k
+    tl = hammer2(25.0 * k, 3.7)
+    r = cobbled_path6([(-L / 2, 0), (L / 2, 0)], ROAD_W, ROAD_STONE, cutter=tl.buffer(GAP, join_style=1), seed=seed)
+    if trim > 0: r = r.intersection(box(-L / 2 + trim, -ROAD_W, L / 2 - trim, ROAD_W))
+    r = unary_union([soften(p, 0.3) for p in pieces(r)])
+    g = affinity.rotate(unary_union([r, tl]), 45, origin=(0, 0))
+    return centre(soften(printable(g, w=0.6, speck=2.0)))
