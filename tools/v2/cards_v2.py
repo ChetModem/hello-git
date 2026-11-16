@@ -119,7 +119,19 @@ def road_building():
     """Road (same stones as Longest Road) crossed with a hammer, built at final size."""
     for k in np.arange(1.2, 0.6, -0.01):
         g = G.road_tool6(k, 'hammer')
-        if ZONE.contains(place(g, 0, -g.centroid.y)): return {WHITE: g}, GREEN     # sized where it stands (centred on its weight)
+        if ZONE.contains(place(g, 0, -g.centroid.y)): return {WHITE: split_planks(g)}, GREEN     # sized where it stands
+def split_planks(g, ratio=1.5, road_dir=45.0):
+    """Any stone more than `ratio` x the median stone gets one more joint across the road at its middle
+    (the largest piece is the hammer and is left alone)."""
+    P = sorted(G.pieces(g), key=lambda p: -p.area); tool, stones = P[0], P[1:]
+    med = float(np.median([p.area for p in stones])); out = [tool]
+    u = np.array([np.cos(np.radians(road_dir)), np.sin(np.radians(road_dir))]); n = np.array([-u[1], u[0]])
+    for p in stones:
+        if p.area > ratio * med:
+            c = np.array(p.centroid.coords[0]); cut = G.LineString([tuple(c - n * 10), tuple(c + n * 10)]).buffer(G.GAP / 2, cap_style=2)
+            out += [G.soften(q, 0.3) for q in G.pieces(p.difference(cut))]
+        else: out.append(p)
+    return unary_union(out)
 CARD_W, CARD_H = 11.0, 15.4      # the card drawing's proportions (scaled by s_)
 FAN_EXTRA = 1.2                  # fixed extra spacing in a fan: the 0.8 mm gaps do not shrink with the drawing
 YOP_DX = 7.4                     # Year of Plenty card spacing (scaled), as before
