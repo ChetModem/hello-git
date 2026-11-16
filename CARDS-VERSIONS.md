@@ -25,8 +25,15 @@ Preview: `catan-cards-v2-preview.png`. Code: `tools/v2/`.
 - Building Costs: rows (piece on the left, one hexagon per resource card) - the centred-blocks layout was tried and dropped.
 - Year of Plenty and Monopoly use the same card size; Monopoly's crown rests on a fan of 3 cards.
 - Victory Point trophy: open handles, solid black star. Small trophies (Longest Road, Largest Army): 12.5 mm.
-- Resource icons: choosing between whole sets (`catan-resource-sets-compare.png`): Set 1 current mixed styles,
-  Set 2 flat straight-on view, Set 3 3D three-quarter view built like the wood.
+- Resource icons: LOCKED (`catan-resource-set-v2-locked.png`, shapes saved by `tools/v2/locked_set.py`).
+  Flat, straight-on, solid shapes split by 0.8 mm black lines, 0.3 mm rounded tips, about 270 mm2 of colour each
+  (wheat about 115, lighter by nature). Tall icons (pine, sheep, wheat) end on one line, wide ones (brick, ore) on another.
+  - Brick: v1 wall layout rebuilt, 0.9 mm mortar.
+  - Wood: pine tree, three tiers and a trunk (olive filament kept).
+  - Sheep: symmetrical fleece, head and ears as one solid shape, no face, two legs.
+  - Wheat: single ear of angular grains, 1.7 mm stalk.
+  - Ore: two faceted rocks on an uneven base; small rock with its original lines, big rock with a Y of lines and no right line.
+  Rounds of options: `catan-resource-round3..7.png`, `catan-ore-lines-round9/10.png`.
 - One card drawing everywhere (white card, black hexagon outline = a resource back with the colours swapped):
   Year of Plenty, Monopoly, Building Costs dev-card piece.
 - Monopoly: crown over 3 cards. Road Building, Year of Plenty, Monopoly: white icons, green only in the corners.
