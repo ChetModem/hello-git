@@ -119,19 +119,37 @@ def road_building():
     """Road (same stones as Longest Road) crossed with a hammer, built at final size."""
     for k in np.arange(1.2, 0.6, -0.01):
         g = G.road_tool6(k, 'hammer')
-        if ZONE.contains(place(g, 0, -g.centroid.y)): return {WHITE: split_planks(g)}, GREEN     # sized where it stands
-def split_planks(g, ratio=1.5, road_dir=45.0):
-    """Any stone more than `ratio` x the median stone gets one more joint across the road at its middle
-    (the largest piece is the hammer and is left alone)."""
-    P = sorted(G.pieces(g), key=lambda p: -p.area); tool, stones = P[0], P[1:]
-    med = float(np.median([p.area for p in stones])); out = [tool]
-    u = np.array([np.cos(np.radians(road_dir)), np.sin(np.radians(road_dir))]); n = np.array([-u[1], u[0]])
-    for p in stones:
-        if p.area > ratio * med:
-            c = np.array(p.centroid.coords[0]); cut = G.LineString([tuple(c - n * 10), tuple(c + n * 10)]).buffer(G.GAP / 2, cap_style=2)
+        if ZONE.contains(place(g, 0, -g.centroid.y)): return {WHITE: split_top(split_planks(g))}, GREEN     # sized where it stands
+RB_SPLIT = 1.5
+RB_TOP_MAX = 17.0                  # in the half of the road above the hammer, stones over this get one more joint
+def split_top(g, road_dir=45.0):
+    """The road's upper half (above the hammer): stones over RB_TOP_MAX get one more joint across the road,
+    so that half is as busy as the lower half."""
+    P = sorted(G.pieces(g), key=lambda p: -p.area); out = [P[0]]
+    n = np.array([-np.sin(np.radians(road_dir)), np.cos(np.radians(road_dir))])
+    for p in P[1:]:
+        c = np.array(p.centroid.coords[0])
+        if c[0] + c[1] > 0 and p.area > RB_TOP_MAX:
+            cut = G.LineString([tuple(c - n * 10), tuple(c + n * 10)]).buffer(G.GAP / 2, cap_style=2)
             out += [G.soften(q, 0.3) for q in G.pieces(p.difference(cut))]
         else: out.append(p)
     return unary_union(out)
+def split_planks(g, ratio=None, road_dir=45.0, passes=1):
+    """Any stone more than `ratio` x the median stone gets one more joint across the road at its middle,
+    repeated against the new median until no stone stands out (the largest piece is the hammer, left alone)."""
+    ratio = ratio or RB_SPLIT
+    u = np.array([np.cos(np.radians(road_dir)), np.sin(np.radians(road_dir))]); n = np.array([-u[1], u[0]])
+    for _ in range(passes):
+        P = sorted(G.pieces(g), key=lambda p: -p.area); tool, stones = P[0], P[1:]
+        med = float(np.median([p.area for p in stones])); out = [tool]; changed = False
+        for p in stones:
+            if p.area > ratio * med:
+                c = np.array(p.centroid.coords[0]); cut = G.LineString([tuple(c - n * 10), tuple(c + n * 10)]).buffer(G.GAP / 2, cap_style=2)
+                out += [G.soften(q, 0.3) for q in G.pieces(p.difference(cut))]; changed = True
+            else: out.append(p)
+        g = unary_union(out)
+        if not changed: break
+    return g
 CARD_W, CARD_H = 11.0, 15.4      # the card drawing's proportions (scaled by s_)
 FAN_EXTRA = 1.2                  # fixed extra spacing in a fan: the 0.8 mm gaps do not shrink with the drawing
 YOP_DX = 7.4                     # Year of Plenty card spacing (scaled), as before
