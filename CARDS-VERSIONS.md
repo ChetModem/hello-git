@@ -84,4 +84,11 @@ Preview: `catan-cards-v2-preview.png`. Code: `tools/v2/`.
     without this set's pieces); pieces right-aligned so every row has the same gap before its hexagons; road piece
     standing near vertical (80 degrees). The set's own pieces were tried (`catan-building-costs-own-pieces.png`) and dropped.
   - Knight helmet brought to the set's weight (275 mm2).
+  - Victory Point sized where it stands on the tall line, so it sits inside the back ring like the others (255 mm2).
+  - Longest Road's road raised so its middle is level with Largest Army's helmets (trophy row unchanged).
+  - Largest Army helmet spacing kept (suits the road's zig-zag).
+  - Building Costs: road piece back at its 30 degree angle; pieces centred on their weight and spaced to where they
+    look solid (`catan-building-costs-alignment.png`: outer edges / weight-centred / optical - optical used).
+  - Backs: every line at the ring's 1.6 mm (development rings, trophy outline); coin stacks drawn at 1.35 mm so the
+    thicker lines don't crowd the gaps between coins.
 - Test: `catan-backs-showthrough-test.3mf` - Knight and Victory Point at 0.5 mm (left) and 0.6 mm (right).

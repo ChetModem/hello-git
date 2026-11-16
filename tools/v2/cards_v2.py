@@ -26,7 +26,7 @@ def ring_around(inner_ring, gap):
 
 V1_DEV_BACK = pickle.load(open(os.path.join(SPD, 'dev_shapes.pkl'), 'rb'))['knight']['logo']
 def back_resource(): return RES_LOGO
-BACK_LINES = 'original'           # 'original' or 'even' (inner drawings at the ring's line weight)
+BACK_LINES = 'even'               # 'original' or 'even' (inner drawings at the ring's line weight)
 def even_lines(drawing, now):
     """Thicken / thin a line drawing evenly on both sides so its strokes match the ring's LW."""
     d = (LW - now) / 2
@@ -36,10 +36,11 @@ def back_parts(full):
 def with_even(full, now):
     if BACK_LINES != 'even': return full
     return unary_union([RES_LOGO, even_lines(back_parts(full), now)]).buffer(0)
+COIN_LW = 1.35                    # coins a touch lighter so the thick lines don't crowd the gaps between coins
 def back_dev_v1(): return with_even(V1_DEV_BACK, 1.23)
 def back_costs_v1():
     """Building Costs back: the hex ring with three coin stacks inside (same family as the trophy back)."""
-    if BACK_LINES == 'even': return unary_union([RES_LOGO, G.coin_stacks3(LW)]).buffer(0)
+    if BACK_LINES == 'even': return unary_union([RES_LOGO, G.coin_stacks3(COIN_LW)]).buffer(0)
     return unary_union([RES_LOGO, G.coin_stacks3(1.2)]).buffer(0)
 def back_trophy_v1():
     """The original Longest Road / Largest Army back (hex ring + trophy outline), traced from the v2 trophy."""
@@ -106,7 +107,7 @@ def knight():
         g, k = G.fit_zone(G.helmet(h))
         if g.area <= KNIGHT_WEIGHT: return {PURPLE: g}, PURPLE
 VP_WEIGHT = 285.0
-VP_FIT = 'before'                 # 'before': sized to the ring, then moved to the tall line; 'after': sized where it stands
+VP_FIT = 'after'                  # 'before': sized to the ring, then moved to the tall line; 'after': sized where it stands
 def victory_point(fit=None):
     """The one trophy (solid handles, black star), sized by weight like the resource icons."""
     fit = fit or VP_FIT
@@ -169,7 +170,8 @@ def table_layout(top_slot, top, centre_y=None):
 def longest_road():
     """Road of evened irregular cobbles, 4 runs at 20 degrees; the dip's joints placed by hand (offset, angled,
     nothing straight across), one joint nudged 1 mm to even the stones."""
-    return table_layout(WHITE, G.longest_road11(LR_DIP, nudge=LR_NUDGE, seed=LR_SEED))
+    army = largest_army()[0][PURPLE]; mid = (army.bounds[1] + army.bounds[3]) / 2     # road's middle level with the helmets'
+    return table_layout(WHITE, G.longest_road11(LR_DIP, nudge=LR_NUDGE, seed=LR_SEED), centre_y=mid)
 ARMY_GAP = 1.4
 def largest_army(gap=None):
     big = G.helmet(22.0); small = G.helmet(15.5); gap = ARMY_GAP if gap is None else gap
@@ -177,12 +179,21 @@ def largest_army(gap=None):
     h = unary_union([place(big, 0, -big.bounds[1])] + [place(small, sd * (wb / 2 + gap + ws / 2), -small.bounds[1]) for sd in (-1, 1)])
     return table_layout(PURPLE, h)
 BC_PIECES = 'original'            # 'original' Catan shapes or 'own' (this set's printed pieces, drawn flat)
-BC_ROAD_ANGLE = 80.0               # road piece 10 degrees off vertical
+BC_ROAD_ANGLE = 30.0               # road piece at the angle you preferred
+BC_ALIGN = 'optical'                 # 'box' (outer edges), 'weight' (centred on weight), 'optical' (weight + visual edge)
+def visual_right(g, frac=0.5, step=0.05):
+    """x of the right-most column where the piece covers at least frac of its own height (its visual edge)."""
+    b = g.bounds; h = b[3] - b[1]; x = b[2]
+    while x > b[0]:
+        col = g.intersection(G.box(x - step, b[1] - 1, x, b[3] + 1))
+        if not col.is_empty and (col.bounds[3] - col.bounds[1]) >= frac * h and col.area / step >= frac * h * 0.9: return x
+        x -= step
+    return b[2]
 BC_GAP = 1.6                      # every piece ends the same distance before its first hexagon
 def bc_pieces(kind):
     if kind == 'own':
         return {'road': G.road_piece_top(), 'settlement': G.own_settlement2(8.2), 'city': G.own_city2(10.0), 'dev': G.card_solid(6.0, 8.4)}
-    return {'road': affinity.rotate(G.road_piece(), BC_ROAD_ANGLE, origin=(0, 0)),     # standing near vertical
+    return {'road': affinity.rotate(G.road_piece(), BC_ROAD_ANGLE, origin=(0, 0)),
             'settlement': affinity.scale(V1.p_settlement(), 1.25, 1.25, origin=(0, 0)),
             'city': affinity.scale(V1.p_city(), 1.25, 1.25, origin=(0, 0)), 'dev': G.card_solid(6.0, 8.4)}
 def building_costs(kind=None):
@@ -194,7 +205,10 @@ def building_costs(kind=None):
     out = {}
     for i, (p, res) in enumerate(rows):
         y = 21.0 - i * 14.0; x = -13.0
-        g = piece[p]; b = g.bounds; out = merge(out, {WHITE: place(g, x - BC_GAP - b[2], y - (b[1] + b[3]) / 2)})
+        g = piece[p]; b = g.bounds
+        cy = g.centroid.y if BC_ALIGN in ('weight', 'optical') else (b[1] + b[3]) / 2          # vertical: centred on weight
+        edge = visual_right(g) if BC_ALIGN == 'optical' else b[2]                              # horizontal: where it looks solid
+        out = merge(out, {WHITE: place(g, x - BC_GAP - edge, y - cy)})
         for r in res:
             out = merge(out, {slot[r]: place(V1.hexagon(0, 0, 6.5).buffer(0.25, join_style=1).buffer(-0.25, join_style=1), x + 3.25, y)}); x += 7.5
     return out, None
