@@ -26,9 +26,20 @@ def ring_around(inner_ring, gap):
 
 V1_DEV_BACK = pickle.load(open(os.path.join(SPD, 'dev_shapes.pkl'), 'rb'))['knight']['logo']
 def back_resource(): return RES_LOGO
-def back_dev_v1(): return V1_DEV_BACK
+BACK_LINES = 'original'           # 'original' or 'even' (inner drawings at the ring's line weight)
+def even_lines(drawing, now):
+    """Thicken / thin a line drawing evenly on both sides so its strokes match the ring's LW."""
+    d = (LW - now) / 2
+    return drawing.buffer(d, join_style=2, mitre_limit=3) if d > 0 else drawing.buffer(d, join_style=2, mitre_limit=3).buffer(0)
+def back_parts(full):
+    inner = full.difference(RES_LOGO.buffer(0.05)); return unary_union([p for p in G.pieces(inner) if p.area > 0.5])
+def with_even(full, now):
+    if BACK_LINES != 'even': return full
+    return unary_union([RES_LOGO, even_lines(back_parts(full), now)]).buffer(0)
+def back_dev_v1(): return with_even(V1_DEV_BACK, 1.23)
 def back_costs_v1():
     """Building Costs back: the hex ring with three coin stacks inside (same family as the trophy back)."""
+    if BACK_LINES == 'even': return unary_union([RES_LOGO, G.coin_stacks3(LW)]).buffer(0)
     return unary_union([RES_LOGO, G.coin_stacks3(1.2)]).buffer(0)
 def back_trophy_v1():
     """The original Longest Road / Largest Army back (hex ring + trophy outline), traced from the v2 trophy."""
@@ -36,7 +47,7 @@ def back_trophy_v1():
     sil = Polygon(max(G.pieces(t), key=lambda p: p.area).exterior)
     inside = sil.buffer(-LW, join_style=1)
     cup = max(G.pieces(inside), key=lambda p: p.area)
-    return unary_union([RES_LOGO, centre(sil.difference(cup))]).buffer(0)
+    return with_even(unary_union([RES_LOGO, centre(sil.difference(cup))]).buffer(0), 1.82)
 def back_dev():
     """Two rings: the resource ring plus one 2 mm outside it. Every development icon sits inside the inner ring."""
     return unary_union([RING, ring_around(RING, 2.0)])
@@ -95,10 +106,13 @@ def knight():
         g, k = G.fit_zone(G.helmet(h))
         if g.area <= KNIGHT_WEIGHT: return {PURPLE: g}, PURPLE
 VP_WEIGHT = 285.0
-def victory_point():
+VP_FIT = 'before'                 # 'before': sized to the ring, then moved to the tall line; 'after': sized where it stands
+def victory_point(fit=None):
     """The one trophy (solid handles, black star), sized by weight like the resource icons."""
+    fit = fit or VP_FIT
     for hgt in np.arange(26.0, 15.0, -0.2):
         g = G.trophy(hgt)
+        if fit == 'after': g = place(g, 0, TALL_LINE - g.bounds[1])
         if g.area <= VP_WEIGHT and ZONE.contains(g): return {ORANGE: g}, ORANGE
 def road_building():
     """Road (same stones as Longest Road) crossed with a hammer, built at final size."""
@@ -146,34 +160,40 @@ def trophies():
     w = t.bounds[2] - t.bounds[0]
     return unary_union([place(t, -(w / 2 + 1.6), 0), place(t, w / 2 + 1.6, 0)])
 TROPHY_BOTTOM = -18.2          # one fixed trophy row for every table card (where Largest Army's sat)
-def table_layout(top_slot, top):
-    """Table cards: the pair of trophies always in the same place; the card's picture TABLE_GAP above them."""
+def table_layout(top_slot, top, centre_y=None):
+    """Table cards: the pair of trophies always in the same place; the card's picture TABLE_GAP above them
+    (or with its middle at centre_y)."""
     tr = trophies(); tr = place(tr, 0, TROPHY_BOTTOM - tr.bounds[1]); t = G.centre(top)
-    t = place(t, 0, tr.bounds[3] + TABLE_GAP - t.bounds[1])
+    t = place(t, 0, tr.bounds[3] + TABLE_GAP - t.bounds[1]) if centre_y is None else place(t, 0, centre_y)
     return {top_slot: t, ORANGE: tr}, ORANGE
 def longest_road():
     """Road of evened irregular cobbles, 4 runs at 20 degrees; the dip's joints placed by hand (offset, angled,
     nothing straight across), one joint nudged 1 mm to even the stones."""
     return table_layout(WHITE, G.longest_road11(LR_DIP, nudge=LR_NUDGE, seed=LR_SEED))
-def largest_army():
-    big = G.helmet(22.0); small = G.helmet(15.5); gap = 1.4
+ARMY_GAP = 1.4
+def largest_army(gap=None):
+    big = G.helmet(22.0); small = G.helmet(15.5); gap = ARMY_GAP if gap is None else gap
     wb = big.bounds[2] - big.bounds[0]; ws = small.bounds[2] - small.bounds[0]
     h = unary_union([place(big, 0, -big.bounds[1])] + [place(small, sd * (wb / 2 + gap + ws / 2), -small.bounds[1]) for sd in (-1, 1)])
     return table_layout(PURPLE, h)
-def building_costs():
-    """Rows: piece on the left, one hexagon per resource card it costs (the layout you preferred)."""
+BC_PIECES = 'original'            # 'original' Catan shapes or 'own' (this set's printed pieces, drawn flat)
+BC_GAP = 1.6                      # every piece ends the same distance before its first hexagon
+def bc_pieces(kind):
+    if kind == 'own':
+        return {'road': G.road_piece_top(), 'settlement': G.own_settlement2(8.2), 'city': G.own_city2(10.0), 'dev': G.card_solid(6.0, 8.4)}
+    return {'road': G.road_piece(),                                              # upright: lying level like the other rows
+            'settlement': affinity.scale(V1.p_settlement(), 1.25, 1.25, origin=(0, 0)),
+            'city': affinity.scale(V1.p_city(), 1.25, 1.25, origin=(0, 0)), 'dev': G.card_solid(6.0, 8.4)}
+def building_costs(kind=None):
+    """Rows: piece on the left (right-aligned, same gap before the hexagons in every row), one hexagon per resource card."""
     rows = [('road', ['brick', 'wood']), ('settlement', ['brick', 'wood', 'wheat', 'sheep']),
             ('city', ['ore', 'ore', 'ore', 'wheat', 'wheat']), ('dev', ['ore', 'wheat', 'sheep'])]
     slot = {'brick': BRICK, 'wood': WOOD, 'wheat': WHEAT, 'sheep': WHITE, 'ore': ORE}
-    piece = {'road': affinity.rotate(G.road_piece(), 30, origin=(0, 0)),
-             'settlement': affinity.scale(V1.p_settlement(), 1.25, 1.25, origin=(0, 0)),
-             'city': affinity.scale(V1.p_city(), 1.25, 1.25, origin=(0, 0)),
-             'dev': G.card_solid(6.0, 8.4)}
+    piece = bc_pieces(kind or BC_PIECES)
     out = {}
     for i, (p, res) in enumerate(rows):
-        y = 21.0 - i * 14.0
-        g = piece[p]; b = g.bounds; out = merge(out, {WHITE: place(g, -18.6 - (b[0] + b[2]) / 2, y - (b[1] + b[3]) / 2)})
-        x = -13.0
+        y = 21.0 - i * 14.0; x = -13.0
+        g = piece[p]; b = g.bounds; out = merge(out, {WHITE: place(g, x - BC_GAP - b[2], y - (b[1] + b[3]) / 2)})
         for r in res:
             out = merge(out, {slot[r]: place(V1.hexagon(0, 0, 6.5).buffer(0.25, join_style=1).buffer(-0.25, join_style=1), x + 3.25, y)}); x += 7.5
     return out, None
@@ -202,7 +222,7 @@ CARDS = {
     'Building Costs': (building_costs, back_costs_v1), 'Longest Road': (longest_road, back_trophy_v1), 'Largest Army': (largest_army, back_trophy_v1),
 }
 SINGLE_ICON = {'Knight', 'Victory Point', 'Road Building', 'Year of Plenty', 'Monopoly'}
-KNIGHT_WEIGHT = 300.0
+KNIGHT_WEIGHT = 275.0
 TALL_LINE, WIDE_LINE = RES_ICONS['wood'].bounds[1], RES_ICONS['brick'].bounds[1]
 SPECK = {}
 def finish(name, face):

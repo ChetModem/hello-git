@@ -2097,3 +2097,12 @@ def own_city2(h=9.6):
     g = affinity.scale(g, k, k, origin=(0, 0))
     g = g.buffer(-0.3, join_style=2).buffer(0.3, join_style=1)                    # nothing under 0.6 mm wide
     return centre(soften(g, 0.3))
+
+def road_piece_top():
+    """This set's road piece seen from above (traced from the printed piece): a bar with curved-in ends."""
+    import pickle as _p, os as _o
+    O = _p.load(open(_o.path.join(_o.path.dirname(_o.path.dirname(_o.path.abspath(__file__))), 'pieces', 'silhouettes.pkl'), 'rb'))
+    g = O['road']['top']; b = g.bounds; g = affinity.translate(g, -(b[0] + b[2]) / 2, -(b[1] + b[3]) / 2)
+    k = 9.6 / 27.1; g = affinity.scale(g, k, k, origin=(0, 0)).simplify(0.12)
+    g = g.buffer(-0.45, join_style=1).buffer(0.45, join_style=1)
+    return soften(max(pieces(g), key=lambda p: p.area), 0.3)
