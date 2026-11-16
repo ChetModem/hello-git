@@ -42,4 +42,9 @@ Preview: `catan-cards-v2-preview.png`. Code: `tools/v2/`.
 - One trophy everywhere: filled handles, solid black star (Victory Point, Longest Road, Largest Army, their back).
 - Backs: the original designs; Building Costs back gets three coin stacks in the ring (like the trophy back). Development and table cards go to 0.6 mm with one black layer between the colour
   and the back logo, so the logo cannot show through. Resource cards stay 0.5 mm (their icons are clear of the ring).
+- Final consistency pass (`catan-cards-v2-final-review.png`): every card now uses the resource set's rules -
+  0.8 mm lines and gaps everywhere (development and table cards were at 0.7), 0.3 mm rounded tips, no loose
+  pieces under 2 mm2 (two chips at the Longest Road bends removed), single development icons centred halfway
+  between outline and weight like the ore, Knight helmet brought down to the others' weight (327 -> 297 mm2).
+  Rejected resource options removed from the card list (code kept in history).
 - Test: `catan-backs-showthrough-test.3mf` - Knight and Victory Point at 0.5 mm (left) and 0.6 mm (right).

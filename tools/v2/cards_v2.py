@@ -66,6 +66,7 @@ def merge(*dicts):
         for k, v in d.items(): out[k] = unary_union([out[k], v]) if k in out else v
     return out
 ZONE = G.safe_zone()
+G.GAP = G.LINE          # v2 final pass: every card uses the resource set's 0.8 mm lines and gaps
 
 def fanned_cards(colours, w=8.6, h=12.0, spread=16.0, dx=5.0):
     """Cards fanned left to right (later ones in front). colours: list of hex slots (None = development card)."""
@@ -86,7 +87,10 @@ def fanned_cards(colours, w=8.6, h=12.0, spread=16.0, dx=5.0):
 
 # ---------------------------------------------------------------- development cards
 def knight():
-    g, k = G.fit_zone(G.helmet(31.0)); return {PURPLE: g}, PURPLE
+    """Helmet sized to about the same weight as the other icons (it was the heaviest by ~20%)."""
+    for h in np.arange(31.0, 18.0, -0.2):
+        g, k = G.fit_zone(G.helmet(h))
+        if g.area <= KNIGHT_WEIGHT: return {PURPLE: g}, PURPLE
 def victory_point():
     g, k = G.fill_zone(G.trophy_open(25.1)); return {ORANGE: g}, ORANGE
 def road_building():
@@ -164,17 +168,33 @@ def ore_card(opt='plain'):
     else: g = G.at_final(G.ingots3d)[0]
     return {ORE: g}, ORE
 
+RES_ICONS = pickle.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resource_icons_v2.pkl'), 'rb'))   # locked set
+RES_SLOT = {'brick': BRICK, 'wood': WOOD, 'sheep': WHITE, 'wheat': WHEAT, 'ore': ORE}
+def resource(n): return lambda: ({RES_SLOT[n]: RES_ICONS[n]}, RES_SLOT[n])
 CARDS = {
+    'Brick': (resource('brick'), back_resource), 'Wood': (resource('wood'), back_resource), 'Sheep': (resource('sheep'), back_resource),
+    'Wheat': (resource('wheat'), back_resource), 'Ore': (resource('ore'), back_resource),
     'Knight': (knight, back_dev_v1), 'Victory Point': (victory_point, back_dev_v1), 'Road Building': (road_building, back_dev_v1),
     'Year of Plenty': (year_of_plenty, back_dev_v1), 'Monopoly': (monopoly, back_dev_v1),
     'Building Costs': (building_costs, back_costs_v1), 'Longest Road': (longest_road, back_trophy_v1), 'Largest Army': (largest_army, back_trophy_v1),
-    'Ore: mountains': (lambda: ore_card('plain'), back_resource), 'Ore: rocks': (lambda: ore_card('rocks'), back_resource),
-    'Ore: ingots': (lambda: ore_card('ingots'), back_resource),
-    'Brick: 3D': (lambda: ({BRICK: G.at_final(G.bricks3d)[0]}, BRICK), back_resource),
-    'Wheat: v1': (lambda: wheat_card('v1'), back_resource), 'Wheat: one ear': (lambda: ({WHEAT: G.wheat_ear_final()}, WHEAT), back_resource),
 }
+SINGLE_ICON = {'Knight', 'Victory Point', 'Road Building', 'Year of Plenty', 'Monopoly'}
+KNIGHT_WEIGHT = 300.0
+SPECK = {'Building Costs': 1.0}     # keeps the small hexagon inside its development-card drawing
+def finish(name, face):
+    """Same finishing rules as the resource set: 0.3 mm rounded tips, no specks under 2 mm2,
+    single development icons centred on their weight (like the resource icons)."""
+    out = {}
+    for k, v in face.items():
+        v = G.soften(v, 0.3)
+        out[k] = unary_union([p for p in G.pieces(v) if p.area >= SPECK.get(name, 2.0)])
+    if name in SINGLE_ICON:
+        allg = unary_union(list(out.values())); b = allg.bounds; dy = -(allg.centroid.y + (b[1] + b[3]) / 2) / 2   # halfway, as for the ore
+        out = {k: affinity.translate(v, 0, dy) for k, v in out.items()}
+    return out
 def build(name):
     f, back = CARDS[name]
     face, corner = f()
+    if name not in ('Brick', 'Wood', 'Sheep', 'Wheat', 'Ore'): face = finish(name, face)
     if corner is not None: face = merge(face, {corner: corners(corner)})
     return face, back(), corner
