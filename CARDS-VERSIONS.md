@@ -99,4 +99,8 @@ Preview: `catan-cards-v2-preview.png`. Code: `tools/v2/`.
     Tried and dropped: splitting by rule, re-laying with evened cobbles (`catan-road-building-relaid.png`).
   - Backs: every line at the ring's 1.6 mm (development rings, trophy outline); coin stacks drawn at 1.35 mm so the
     thicker lines don't crowd the gaps between coins.
+- Final full review (`catan-cards-v2-full-set.png`): all 13 faces and 4 backs pass the print checks; every single icon
+  sits inside the back ring and within 1.5 mm of centre by weight; every resource icon identical to its approved version;
+  every detail present (visor, stars, card hexagons, stones, helmets). v2 card designs complete; next: test prints,
+  legend, print files.
 - Test: `catan-backs-showthrough-test.3mf` - Knight and Victory Point at 0.5 mm (left) and 0.6 mm (right).
