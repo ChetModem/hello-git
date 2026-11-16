@@ -105,39 +105,40 @@ def road_building():
     for k in np.arange(1.2, 0.6, -0.01):
         g = G.road_tool6(k, 'hammer')
         if ZONE.contains(g): return {WHITE: g}, GREEN
-def year_of_plenty():
-    """Same card size as Monopoly's (built at final size)."""
-    monopoly(); s_ = yop_card_scale() * monopoly.scale_note
-    f = fanned_cards([None, None], w=11.0 * s_, h=15.4 * s_, spread=14.0, dx=YOP_DX * s_)
-    allg = unary_union(list(f.values())); b = allg.bounds
-    return {k: place(v, -(b[0] + b[2]) / 2, -(b[1] + b[3]) / 2) for k, v in f.items()}, GREEN
-def yop_card_scale():
-    f = fanned_cards([None, None], w=11.0, h=15.4, spread=14.0, dx=YOP_DX)
-    allg = unary_union(list(f.values())); _, s_ = G.fill_zone(allg); return s_
-YOP_DX = 7.4                     # far enough apart that both solid hexagons show whole
-MONO_OVERLAP = 0.45
+CARD_W, CARD_H = 11.0, 15.4      # the card drawing's proportions (scaled by s_)
+FAN_EXTRA = 1.2                  # fixed extra spacing in a fan: the 0.8 mm gaps do not shrink with the drawing
+YOP_DX = 7.4                     # Year of Plenty card spacing (scaled), as before
+CROWN_W, CROWN_GAP = 1.7, 1.4
 def monopoly_at(s_):
-    w, h = 11.0 * s_, 15.4 * s_
-    plain = fanned_cards([None, None, None], w=w, h=h, spread=12.0, dx=3.2 * s_)[WHITE]
-    cb = plain.bounds
-    cr = G.crown3(w * 1.35); crb = cr.bounds
-    ov = MONO_OVERLAP * (crb[3] - crb[1])
-    cr = place(cr, (cb[0] + cb[2]) / 2 - (crb[0] + crb[2]) / 2, cb[3] - ov - crb[1])        # crown resting on the fan
-    hull = cr.convex_hull
-    cards = fanned_cards([None, None, None], w=w, h=h, spread=12.0, dx=3.2 * s_, hy=-h * 0.17, blocker=hull)[WHITE]
-    cards = unary_union([p for p in G.pieces(cards) if p.area > 2.0])
+    """Crown just above a fan of three cards, every card showing its centre hexagon."""
+    w, h = CARD_W * s_, CARD_H * s_
+    cards = fanned_cards([None] * 3, w=w, h=h, spread=14.0, dx=7.4 * s_ + FAN_EXTRA)[WHITE]; cb = cards.bounds
+    cr = G.crown4(w * CROWN_W, 0.9); crb = cr.bounds
+    cr = place(cr, (cb[0] + cb[2]) / 2 - (crb[0] + crb[2]) / 2, cb[3] + CROWN_GAP - crb[1])
     g = unary_union([cards, cr]); b = g.bounds
     return place(g, -(b[0] + b[2]) / 2, -(b[1] + b[3]) / 2)
+MONO_WEIGHT = 290.0
+def monopoly_scale():
+    for s_ in np.arange(1.6, 0.4, -0.01):
+        g = monopoly_at(s_)
+        if ZONE.contains(g) and g.area <= MONO_WEIGHT: return s_
 def monopoly():
     """Built at its final size (no shrinking afterwards, so the 0.8 mm lines and gaps stay 0.8 mm)."""
-    yop = yop_card_scale(); s_ = yop
-    while s_ > 0.4 and not ZONE.contains(monopoly_at(s_)): s_ -= 0.01
-    monopoly.scale_note = s_ / yop
-    return {WHITE: G.printable(monopoly_at(s_), w=0.6, speck=0.8)}, GREEN
+    return {WHITE: monopoly_at(monopoly_scale())}, GREEN
+YOP_WEIGHT = 270.0
+def year_of_plenty_at(s_):
+    f = fanned_cards([None, None], w=CARD_W * s_, h=CARD_H * s_, spread=14.0, dx=YOP_DX * s_ + FAN_EXTRA)[WHITE]
+    b = f.bounds; return place(f, -(b[0] + b[2]) / 2, -(b[1] + b[3]) / 2)
+def year_of_plenty():
+    """Two cards, each with its whole centre hexagon, sized by weight like every other icon
+    (matching Monopoly's card size would leave it at ~106 mm2: Monopoly's three-card fan has to be small to fit)."""
+    for s_ in np.arange(1.6, 0.4, -0.01):
+        g = year_of_plenty_at(s_)
+        if ZONE.contains(g) and g.area <= YOP_WEIGHT: return {WHITE: g}, GREEN
 
 # ---------------------------------------------------------------- table cards
 TROPHY_H, TABLE_GAP = 12.5, 4.0
-LR_SEED = 7
+LR_SEED = 4
 def trophies():
     t = G.trophy(TROPHY_H)
     w = t.bounds[2] - t.bounds[0]
@@ -149,7 +150,7 @@ def table_layout(top_slot, top):
     t = place(t, 0, tr.bounds[3] + TABLE_GAP - t.bounds[1])
     return {top_slot: t, ORANGE: tr}, ORANGE
 def longest_road():
-    return table_layout(WHITE, G.longest_road6(4, 10.6, 20, seed=LR_SEED))
+    return table_layout(WHITE, G.longest_road7(4, 10.6, 20, seed=LR_SEED))
 def largest_army():
     big = G.helmet(22.0); small = G.helmet(15.5); gap = 1.4
     wb = big.bounds[2] - big.bounds[0]; ws = small.bounds[2] - small.bounds[0]

@@ -1767,3 +1767,46 @@ def pickaxe(length, width):
     bot = [(x * span / 2, yt - drop * x * x - th * (1 - 0.82 * abs(x) ** 1.6)) for x in xs[::-1]]
     head = Polygon(top + bot).buffer(0)
     return soften(unary_union([handle, head]), 0.3)
+
+# ---------------------------------------------------------------- round D7: evener cobbles
+def cobbled_path7(pts, width, stone, cutter=None, min_stone=6.0, seed=3, var=0.15, stagger=0.3):
+    """Irregular cobbles, evened: stone lengths within +/- var of the stone size, and no joint closer than
+    stagger x stone to a joint in the other row (so no straight line runs across the road and no grid forms)."""
+    rng = np.random.default_rng(seed)
+    line = LineString(pts)
+    body = line.buffer(width / 2, cap_style=2, join_style=2, mitre_limit=4)
+    fixed = [line.buffer(GAP / 2, cap_style=2)]
+    for i in range(1, len(pts) - 1):
+        (x0, y0), (x1, y1), (x2, y2) = pts[i - 1], pts[i], pts[i + 1]
+        u = np.array([x1 - x0, y1 - y0]); u /= np.linalg.norm(u); v = np.array([x2 - x1, y2 - y1]); v /= np.linalg.norm(v)
+        bis = u + v; nrm = np.array([-bis[1], bis[0]]); nrm /= np.linalg.norm(nrm)
+        fixed.append(LineString([(x1 - nrm[0] * width, y1 - nrm[1] * width), (x1 + nrm[0] * width, y1 + nrm[1] * width)]).buffer(GAP / 2, cap_style=2))
+    if cutter is not None: fixed.append(cutter)
+    stones = []
+    for i in range(len(pts) - 1):
+        (x0, y0), (x1, y1) = pts[i], pts[i + 1]
+        seg = np.hypot(x1 - x0, y1 - y0); ux, uy = (x1 - x0) / seg, (y1 - y0) / seg; nx, ny = -uy, ux
+        row_a = []
+        for side in (1, -1):
+            s = stone * (rng.uniform(0.75, 1.0) if side > 0 else rng.uniform(0.35, 0.6))
+            while s < seg - stone * 0.45:
+                if side < 0:
+                    for a in row_a:                      # keep this row's joints off the other row's joints
+                        if abs(s - a) < stagger * stone: s = a + stagger * stone * (1 if s >= a else -1)
+                if stone * 0.35 < s < seg - stone * 0.45:
+                    px, py = x0 + ux * s, y0 + uy * s
+                    stones.append(LineString([(px, py), (px + side * nx * width, py + side * ny * width)]).buffer(GAP / 2, cap_style=2))
+                    if side > 0: row_a.append(s)
+                s += stone * rng.uniform(1 - var, 1 + var)
+    fx = unary_union(fixed)
+    for _ in range(60):
+        g = body.difference(unary_union([fx] + stones)).buffer(0)
+        small = [p for p in pieces(g) if p.area < min_stone]
+        if not small or not stones: break
+        p = small[0]; j = min(range(len(stones)), key=lambda q: stones[q].distance(p))
+        if stones[j].distance(p) > GAP: break
+        stones.pop(j)
+    return printable(body.difference(unary_union([fx] + stones)).buffer(0), w=0.6, speck=0.8)
+
+def longest_road7(n=4, seg=10.6, angle=20, seed=3, var=0.15):
+    return centre(soften(cobbled_path7(winding_pts(n, seg, angle), ROAD_W, ROAD_STONE, seed=seed, var=var)))
