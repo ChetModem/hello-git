@@ -119,12 +119,33 @@ def road_building():
     """Road (same stones as Longest Road) crossed with a hammer, built at final size."""
     k3 = next(k for k in np.arange(1.2, 0.6, -0.01) if ZONE.contains(G.road_tool6(k, 'hammer')))    # the round-3 road you approved
     for t in np.arange(0.0, 4.01, 0.1):                                                                # trimmed at the ends only
-        g = split_long(G.road_tool6_trim(k3, t), RB_PLANK)                                             # + one joint across each long stone
+        g = move_joints(split_long(G.road_tool6_trim(k3, t), RB_PLANK), RB_MOVES)                       # + joints across long stones, two moved
         if ZONE.contains(place(g, 0, -g.centroid.y)): return {WHITE: g}, GREEN
+RB_MOVES = [(+1, 1, -1.35), (-1, 1, -1.05)]   # (row: +1 top / -1 bottom, k-th joint above the hammer, mm along the road; - = towards the hammer)
 RB_PLANK = 20.0                    # stones over this (the two beside the hammer) get one joint across the road
 RB_SEED = 7                        # which evened cobble layout (7 / 21 / 9 were the best balanced)
 RB_SPLIT = 1.5
 RB_TOP_MAX = 17.0                  # in the half of the road above the hammer, stones over this get one more joint
+def move_joints(g, moves, road_dir=45.0):
+    """Move single joints in the half of the road above the hammer: close the joint between two neighbouring stones
+    in a row and cut it again `d` mm further along (everything else stays exactly where it was)."""
+    u = np.array([np.cos(np.radians(road_dir)), np.sin(np.radians(road_dir))]); n = np.array([-u[1], u[0]])
+    P = sorted(G.pieces(g), key=lambda p: -p.area); tool, stones = P[0], list(P[1:])
+    tc = tool.centroid; s0 = np.dot([tc.x, tc.y], u)
+    t_mid = np.mean([np.dot(p.centroid.coords[0], n) for p in stones])
+    for row, kth, d in moves:
+        row_st = [p for p in stones if np.sign(np.dot(p.centroid.coords[0], n) - t_mid) == row and np.dot(p.centroid.coords[0], u) > s0]
+        row_st.sort(key=lambda p: np.dot(p.centroid.coords[0], u))
+        a, b = row_st[kth - 1], row_st[kth]
+        a_end = max(np.dot(c, u) for c in a.exterior.coords); b_start = min(np.dot(c, u) for c in b.exterior.coords)
+        joint = (a_end + b_start) / 2 + d
+        merged = unary_union([a, b]).convex_hull                                        # the two stones as one clean stone
+        cm = np.array(merged.centroid.coords[0]); tt = np.dot(cm, n)
+        p0 = u * joint + n * tt
+        cut = G.LineString([tuple(p0 - n * 10), tuple(p0 + n * 10)]).buffer(G.GAP / 2, cap_style=2)
+        new = [G.soften(q, 0.3) for q in G.pieces(merged.difference(cut))]
+        stones = [p for p in stones if p is not a and p is not b] + new
+    return unary_union([tool] + stones)
 def split_long(g, limit, road_dir=45.0):
     """Stones over `limit` mm2 get one joint across the road through their middle (the hammer, the largest piece, is left alone)."""
     P = sorted(G.pieces(g), key=lambda p: -p.area); out = [P[0]]
