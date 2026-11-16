@@ -91,9 +91,10 @@ Preview: `catan-cards-v2-preview.png`. Code: `tools/v2/`.
     look solid (`catan-building-costs-alignment.png`: outer edges / weight-centred / optical - optical used).
   - Full-set review: in-between icons (Monopoly, Road Building) centred on their weight, like the sheep; Road Building
     sized where it stands so it stays inside the ring (`catan-weight-centring.png`: before / after for each).
-    Road Building: any stone over 1.5 x the median gets one more joint across the road (split the one long plank);
-    above the hammer, stones over 17 mm2 get one more joint too, so that half is not sparse
-    (`catan-road-building-cobbles.png`: before / one more joint / two more joints).
+    Road Building: back to the round-3 road you approved (the later shrink to fit the ring had reshuffled every
+    joint), trimmed 0.6 mm at each end so it fits the ring centred on its weight, plus one joint across each of the
+    two long stones beside the hammer (`catan-road-building-final.png`). Stones 7.1-15 mm2.
+    Tried and dropped: splitting by rule, re-laying with evened cobbles (`catan-road-building-relaid.png`).
   - Backs: every line at the ring's 1.6 mm (development rings, trophy outline); coin stacks drawn at 1.35 mm so the
     thicker lines don't crowd the gaps between coins.
 - Test: `catan-backs-showthrough-test.3mf` - Knight and Victory Point at 0.5 mm (left) and 0.6 mm (right).

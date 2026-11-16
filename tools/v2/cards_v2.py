@@ -117,12 +117,24 @@ def victory_point(fit=None):
         if g.area <= VP_WEIGHT and ZONE.contains(g): return {ORANGE: g}, ORANGE
 def road_building():
     """Road (same stones as Longest Road) crossed with a hammer, built at final size."""
-    for k in np.arange(1.2, 0.6, -0.01):
-        g = G.road_tool8(k, RB_SEED)                       # evened cobbles, as Longest Road
-        if ZONE.contains(place(g, 0, -g.centroid.y)): return {WHITE: g}, GREEN     # sized where it stands
+    k3 = next(k for k in np.arange(1.2, 0.6, -0.01) if ZONE.contains(G.road_tool6(k, 'hammer')))    # the round-3 road you approved
+    for t in np.arange(0.0, 4.01, 0.1):                                                                # trimmed at the ends only
+        g = split_long(G.road_tool6_trim(k3, t), RB_PLANK)                                             # + one joint across each long stone
+        if ZONE.contains(place(g, 0, -g.centroid.y)): return {WHITE: g}, GREEN
+RB_PLANK = 20.0                    # stones over this (the two beside the hammer) get one joint across the road
 RB_SEED = 7                        # which evened cobble layout (7 / 21 / 9 were the best balanced)
 RB_SPLIT = 1.5
 RB_TOP_MAX = 17.0                  # in the half of the road above the hammer, stones over this get one more joint
+def split_long(g, limit, road_dir=45.0):
+    """Stones over `limit` mm2 get one joint across the road through their middle (the hammer, the largest piece, is left alone)."""
+    P = sorted(G.pieces(g), key=lambda p: -p.area); out = [P[0]]
+    n = np.array([-np.sin(np.radians(road_dir)), np.cos(np.radians(road_dir))])
+    for p in P[1:]:
+        if p.area > limit:
+            c = np.array(p.centroid.coords[0]); cut = G.LineString([tuple(c - n * 10), tuple(c + n * 10)]).buffer(G.GAP / 2, cap_style=2)
+            out += [G.soften(q, 0.3) for q in G.pieces(p.difference(cut))]
+        else: out.append(p)
+    return unary_union(out)
 def split_top(g, road_dir=45.0):
     """The road's upper half (above the hammer): stones over RB_TOP_MAX get one more joint across the road,
     so that half is as busy as the lower half."""
