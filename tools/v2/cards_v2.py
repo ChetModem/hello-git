@@ -68,14 +68,15 @@ def merge(*dicts):
 ZONE = G.safe_zone()
 G.GAP = G.LINE          # v2 final pass: every card uses the resource set's 0.8 mm lines and gaps
 
-def fanned_cards(colours, w=8.6, h=12.0, spread=16.0, dx=5.0, hy=0.0, blocker=None):
+def fanned_cards(colours, w=8.6, h=12.0, spread=16.0, dx=5.0, hy=0.0, blocker=None, hx0=0.0, hr=0.52, mark=None):
     """Cards fanned left to right (later ones in front), drawn like every card in the set: white card, solid black
     hexagon. A hexagon is only cut where all of it shows; a card whose hexagon would be covered stays plain white."""
     n = len(colours); shapes = []
     for i in range(n):
         a = spread * (i - (n - 1) / 2); ox = (i - (n - 1) / 2) * dx; org = (ox, -h * 0.9)
         body = affinity.rotate(affinity.translate(G.rr(-w / 2, -h / 2, w / 2, h / 2, min(0.9, w * 0.12)), ox, 0), -a, origin=org)
-        hx = affinity.rotate(affinity.translate(G.hexagon(0, hy, w * 0.52), ox, 0), -a, origin=org)
+        m0 = mark(w) if mark is not None else G.hexagon(hx0, hy, w * hr)
+        hx = affinity.rotate(affinity.translate(m0, ox, 0), -a, origin=org)
         shapes.append((body, hx))
     out = Polygon()
     for i, (body, hx) in enumerate(shapes):

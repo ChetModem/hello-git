@@ -1506,3 +1506,111 @@ def road_hammer3(k=1.0):
     hm = affinity.rotate(hammer2(25.0 * k, 3.7), 45, origin=(0, 0))
     r = unary_union([p for p in pieces(r.difference(hm.buffer(GAP, join_style=1))) if p.area >= 6.0])
     return centre(soften(printable(unary_union([r, hm]), w=0.6, speck=2.0)))
+
+# ---------------------------------------------------------------- round D2
+def cobbled_path4(pts, width, stone, avoid=(), end_margin=0.35):
+    """Cobbled road, joints spread evenly along every straight run (both rows always have stones, the two rows
+    staggered by half a stone), a joint through each bend. avoid: (distance along the path, radius) where no
+    stone joint is put (e.g. under a hammer, whose gap is the joint there - the stones beside it run longer)."""
+    line = LineString(pts)
+    body = line.buffer(width / 2, cap_style=2, join_style=2, mitre_limit=4)
+    joints = [line.buffer(GAP / 2, cap_style=2)]
+    for i in range(1, len(pts) - 1):
+        (x0, y0), (x1, y1), (x2, y2) = pts[i - 1], pts[i], pts[i + 1]
+        u = np.array([x1 - x0, y1 - y0]); u /= np.linalg.norm(u); v = np.array([x2 - x1, y2 - y1]); v /= np.linalg.norm(v)
+        bis = u + v; nrm = np.array([-bis[1], bis[0]]); nrm /= np.linalg.norm(nrm)
+        joints.append(LineString([(x1 - nrm[0] * width, y1 - nrm[1] * width), (x1 + nrm[0] * width, y1 + nrm[1] * width)]).buffer(GAP / 2, cap_style=2))
+    run0 = 0.0
+    for i in range(len(pts) - 1):
+        (x0, y0), (x1, y1) = pts[i], pts[i + 1]
+        seg = np.hypot(x1 - x0, y1 - y0); ux, uy = (x1 - x0) / seg, (y1 - y0) / seg; nx, ny = -uy, ux
+        n = max(1, int(round(seg / stone)))
+        for side, offs in ((1, [k / n for k in range(1, n)]), (-1, [(k - 0.5) / n for k in range(1, n + 1)])):
+            for f in offs:
+                s = f * seg
+                if s < stone * end_margin or s > seg - stone * end_margin: continue
+                if any(abs(run0 + s - d) < r for d, r in avoid): continue
+                px, py = x0 + ux * s, y0 + uy * s
+                joints.append(LineString([(px, py), (px + side * nx * width, py + side * ny * width)]).buffer(GAP / 2, cap_style=2))
+        run0 += seg
+    return printable(body.difference(unary_union(joints)).buffer(0), w=0.6, speck=0.8)
+
+def road_hammer4(k=1.0):
+    """Road Building with uneven cobbles: no stone is left out; the hammer's gap is the joint where it crosses,
+    and the stones either side of it are simply longer."""
+    L = 28.0 * k
+    hw = 3.7 * 0.6
+    r = cobbled_path4([(-L / 2, 0), (L / 2, 0)], ROAD_W, ROAD_STONE, avoid=[(L / 2, hw / 2 + GAP + 1.6)])
+    r = affinity.rotate(r, 45, origin=(0, 0))
+    hm = affinity.rotate(hammer2(25.0 * k, 3.7), 45, origin=(0, 0))
+    r = r.difference(hm.buffer(GAP, join_style=1))
+    return centre(soften(printable(unary_union([r, hm]), w=0.6, speck=2.0)))
+
+def winding_pts(n, seg, angle):
+    pts = [(0.0, 0.0)]
+    for kk in range(n):
+        a = angle if kk % 2 == 0 else -angle
+        x, y = pts[-1]; pts.append((x + seg * np.cos(np.radians(a)), y + seg * np.sin(np.radians(a))))
+    return pts
+def longest_road4(n=4, seg=10.6, angle=30):
+    return centre(soften(cobbled_path4(winding_pts(n, seg, angle), ROAD_W, ROAD_STONE)))
+
+def crown4(w, hr=0.9, hex_jewel=False):
+    """crown3 made taller (hr = height / width; crown3 was 0.7), optional solid black hexagon jewel in the band."""
+    h = w * hr; band_h = h * 0.26
+    band = rr(-w / 2, -h / 2, w / 2, -h / 2 + band_h, min(0.6, w * 0.05))
+    y0 = -h / 2 + band_h + GAP
+    tips = [(-w / 2 + w * 0.04, h * 0.30), (0, h * 0.48), (w / 2 - w * 0.04, h * 0.30)]
+    valleys = [(-w * 0.22, y0 + h * 0.20), (w * 0.22, y0 + h * 0.20)]
+    body = Polygon([(-w / 2, y0), tips[0], valleys[0], tips[1], valleys[1], tips[2], (w / 2, y0)])
+    g = unary_union([band, soften(body, 0.5)])
+    if hex_jewel:                     # taller band so the jewel is a readable size
+        band2 = rr(-w / 2, -h / 2 - band_h * 0.5, w / 2, -h / 2 + band_h, min(0.6, w * 0.05))
+        g = unary_union([band2, soften(body, 0.5)]).difference(hexagon(0, -h / 2 + band_h * 0.25, band_h * 0.62))
+    return centre(g)
+
+def cobbled_path5(pts, width, stone, avoid=(), cutter=None, min_stone=6.0):
+    """cobbled_path4, then any stone smaller than min_stone mm2 (at a bend, or beside the cutter, e.g. a hammer's gap)
+    is merged into its neighbour by dropping the stone joint between them: uneven cobbles, nothing missing."""
+    line = LineString(pts)
+    body = line.buffer(width / 2, cap_style=2, join_style=2, mitre_limit=4)
+    fixed = [line.buffer(GAP / 2, cap_style=2)]
+    for i in range(1, len(pts) - 1):
+        (x0, y0), (x1, y1), (x2, y2) = pts[i - 1], pts[i], pts[i + 1]
+        u = np.array([x1 - x0, y1 - y0]); u /= np.linalg.norm(u); v = np.array([x2 - x1, y2 - y1]); v /= np.linalg.norm(v)
+        bis = u + v; nrm = np.array([-bis[1], bis[0]]); nrm /= np.linalg.norm(nrm)
+        fixed.append(LineString([(x1 - nrm[0] * width, y1 - nrm[1] * width), (x1 + nrm[0] * width, y1 + nrm[1] * width)]).buffer(GAP / 2, cap_style=2))
+    if cutter is not None: fixed.append(cutter)
+    stones = []; run0 = 0.0
+    for i in range(len(pts) - 1):
+        (x0, y0), (x1, y1) = pts[i], pts[i + 1]
+        seg = np.hypot(x1 - x0, y1 - y0); ux, uy = (x1 - x0) / seg, (y1 - y0) / seg; nx, ny = -uy, ux
+        n = max(1, int(round(seg / stone)))
+        for side, offs in ((1, [k / n for k in range(1, n)]), (-1, [(k - 0.5) / n for k in range(1, n + 1)])):
+            for f in offs:
+                s = f * seg
+                if s < 0.4 or s > seg - 0.4: continue
+                if any(abs(run0 + s - d) < r for d, r in avoid): continue
+                px, py = x0 + ux * s, y0 + uy * s
+                stones.append(LineString([(px, py), (px + side * nx * width, py + side * ny * width)]).buffer(GAP / 2, cap_style=2))
+        run0 += seg
+    fx = unary_union(fixed)
+    for _ in range(40):
+        g = body.difference(unary_union([fx] + stones)).buffer(0)
+        small = [p for p in pieces(g) if p.area < min_stone]
+        if not small or not stones: break
+        p = small[0]
+        j = min(range(len(stones)), key=lambda q: stones[q].distance(p))
+        if stones[j].distance(p) > GAP: break
+        stones.pop(j)
+    g = body.difference(unary_union([fx] + stones)).buffer(0)
+    return printable(g, w=0.6, speck=0.8)
+
+def road_hammer5(k=1.0):
+    L = 28.0 * k
+    hm = hammer2(25.0 * k, 3.7)                                                   # in road coordinates (road along x): hammer across it
+    r = cobbled_path5([(-L / 2, 0), (L / 2, 0)], ROAD_W, ROAD_STONE, cutter=hm.buffer(GAP, join_style=1))
+    g = affinity.rotate(unary_union([r, hm]), 45, origin=(0, 0))
+    return centre(soften(printable(g, w=0.6, speck=2.0)))
+def longest_road5(n=4, seg=10.6, angle=30):
+    return centre(soften(cobbled_path5(winding_pts(n, seg, angle), ROAD_W, ROAD_STONE)))
