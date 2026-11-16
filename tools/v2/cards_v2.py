@@ -118,8 +118,9 @@ def victory_point(fit=None):
 def road_building():
     """Road (same stones as Longest Road) crossed with a hammer, built at final size."""
     for k in np.arange(1.2, 0.6, -0.01):
-        g = G.road_tool6(k, 'hammer')
-        if ZONE.contains(place(g, 0, -g.centroid.y)): return {WHITE: split_top(split_planks(g))}, GREEN     # sized where it stands
+        g = G.road_tool8(k, RB_SEED)                       # evened cobbles, as Longest Road
+        if ZONE.contains(place(g, 0, -g.centroid.y)): return {WHITE: g}, GREEN     # sized where it stands
+RB_SEED = 7                        # which evened cobble layout (7 / 21 / 9 were the best balanced)
 RB_SPLIT = 1.5
 RB_TOP_MAX = 17.0                  # in the half of the road above the hammer, stones over this get one more joint
 def split_top(g, road_dir=45.0):

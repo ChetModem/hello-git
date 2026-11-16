@@ -2120,3 +2120,12 @@ def sheep5(s=1.0, leg_extra=1.0, fleece_extra=1.0):
     legs = legs.difference(unary_union([body, unit]).buffer(LINE))
     g = soften(printable(unary_union([body, unit, legs]), w=0.6, speck=0.6))
     b = g.bounds; return affinity.translate(g, 0, -(b[1] + b[3]) / 2)
+
+def road_tool8(k=1.0, seed=5):
+    """Road Building with the same evened cobbles as Longest Road (cobbled_path7): even stone lengths, staggered rows,
+    the hammer's gap as a joint, small stones merged into a neighbour."""
+    L = 28.0 * k
+    tl = hammer2(25.0 * k, 3.7)
+    r = cobbled_path7([(-L / 2, 0), (L / 2, 0)], ROAD_W, ROAD_STONE, cutter=tl.buffer(GAP, join_style=1), seed=seed)
+    g = affinity.rotate(unary_union([r, tl]), 45, origin=(0, 0))
+    return centre(soften(printable(g, w=0.6, speck=2.0)))
