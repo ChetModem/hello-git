@@ -1680,3 +1680,44 @@ def fist(w):
     thumb = affinity.translate(thumb, -w * 0.12, h * 0.02)
     palm = palm.difference(unary_union([bands, knuck, thumb.buffer(GAP, join_style=1)]))
     return centre(soften(unary_union([palm, thumb]), 0.3))
+
+# ---------------------------------------------------------------- round D5 experiments
+def wagon_wheel(R, spokes=6, rim=None, hub=None, spoke_w=None):
+    """Wagon wheel drawn the set's way: one solid disc with black cut-outs between the spokes (rim, spokes, hub)."""
+    rim = rim or max(1.6, R * 0.22); hub = hub or R * 0.32; spoke_w = spoke_w or max(1.4, R * 0.2)
+    disc = Point(0, 0).buffer(R, quad_segs=64)
+    inner = Point(0, 0).buffer(R - rim, quad_segs=64).difference(Point(0, 0).buffer(hub + GAP, quad_segs=32))
+    sp = unary_union([affinity.rotate(box(-spoke_w / 2, 0, spoke_w / 2, R), k * 360 / spokes, origin=(0, 0)) for k in range(spokes)])
+    holes = inner.difference(sp)
+    g = disc.difference(holes)
+    g = g.difference(Point(0, 0).buffer(hub * 0.35 + 0.0, quad_segs=24)) if hub * 0.35 * 2 >= 1.4 else g    # axle hole if it is big enough to print
+    return soften(g, 0.3)
+
+def road_with_wheel(style='on', seed=7):
+    """Longest Road idea: a road with a wagon wheel on it."""
+    if style == 'on':                       # winding road, wheel standing on its middle
+        road = longest_road6(4, 10.6, 20, seed=seed)
+        wh = wagon_wheel(6.6); b = road.bounds
+        wh = affinity.translate(wh, 0, b[3] - 3.2)
+    elif style == 'end':                    # long gentle road, wheel rolling at the far end
+        road = longest_road6(3, 11.0, 14, seed=seed)
+        b = road.bounds; wh = wagon_wheel(6.4)
+        wh = affinity.translate(wh, b[2] - 6.0, b[3] + 2.0)
+    else:                                   # straight road, a big wheel standing on it
+        road = centre(soften(cobbled_path6([(-18, 0), (18, 0)], ROAD_W, ROAD_STONE, seed=seed)))
+        wh = wagon_wheel(8.0); wh = affinity.translate(wh, 0, ROAD_W / 2 + 8.0 - 2.4)
+    road = road.difference(wh.buffer(GAP, join_style=1))
+    road = unary_union([p for p in pieces(road) if p.area >= 8.0])
+    return centre(unary_union([road, wh]))
+
+def road_two_tools(k=1.0, seed=5):
+    """Road Building idea: a road up the middle, a hammer and a shovel crossed over it in an X."""
+    L = 34.0 * k
+    road = cobbled_path6([(0, -L / 2), (0, L / 2)], ROAD_W, ROAD_STONE, seed=seed)
+    hm = affinity.rotate(hammer2(19.0 * k, 3.0), -40, origin=(0, 0))
+    sv = affinity.rotate(shovel(19.0 * k, 3.0), 40, origin=(0, 0))
+    sv = sv.difference(hm.buffer(GAP, join_style=1))                             # hammer in front of the shovel
+    tools = unary_union([hm, sv])
+    road = road.difference(tools.buffer(GAP, join_style=1))
+    road = unary_union([p for p in pieces(road) if p.area >= 8.0])
+    return centre(soften(printable(unary_union([road, tools]), w=0.6, speck=2.0)))
