@@ -77,6 +77,31 @@ SINGLE = {'layer_height': '0.08', 'initial_layer_print_height': '0.2', 'wall_loo
           'support_on_build_plate_only': '0', 'support_top_z_distance': '0.08', 'support_bottom_z_distance': '0.08',
           'support_interface_top_layers': '2'}
 
+# SUNLU PLA+ 2.0 (standard, not the High Speed version). SUNLU: nozzle 205-215 C at 50-100 mm/s, bed 50-60 C.
+# A 0.08 mm mini never goes fast, so: 210 C (215 first layer), 55 C bed (60 first layer), full cooling,
+# 15 mm3/s cap, at least 8 s per layer so the head, ears and staff tip cool between layers.
+SUNLU_PLA_PLUS_2 = {
+    'filament_vendor': 'SUNLU', 'filament_type': 'PLA', 'filament_settings_id': 'SUNLU PLA+ 2.0 (Bobby mini)', 'filament_ids': 'GFL99',
+    'nozzle_temperature': '210', 'nozzle_temperature_initial_layer': '215',
+    'nozzle_temperature_range_low': '205', 'nozzle_temperature_range_high': '245',
+    'hot_plate_temp': '55', 'hot_plate_temp_initial_layer': '60', 'textured_plate_temp': '55', 'textured_plate_temp_initial_layer': '60',
+    'eng_plate_temp': '55', 'eng_plate_temp_initial_layer': '60',
+    'filament_density': '1.24', 'filament_flow_ratio': '0.98', 'filament_max_volumetric_speed': '15',
+    'fan_min_speed': '100', 'fan_max_speed': '100', 'overhang_fan_speed': '100', 'close_fan_the_first_x_layers': '1',
+    'slow_down_for_layer_cooling': '1', 'slow_down_layer_time': '8', 'slow_down_min_speed': '10',
+}
+def set_filament(settings, slot, values):
+    """Set per-filament keys for filament `slot` (1-based): 9-long arrays hold one value per filament,
+    54-long ones hold 6 extruder variants per filament."""
+    n = len(settings['filament_colour'])
+    for k, v in values.items():
+        cur = settings.get(k)
+        if not isinstance(cur, list): continue
+        per = len(cur) // n
+        cur[(slot - 1) * per:slot * per] = [v] * per
+# fine-detail walls for a 32 mm figure
+MINI_SPEEDS = {'outer_wall_speed': '40', 'inner_wall_speed': '60', 'small_perimeter_speed': '50%', 'initial_layer_speed': '25'}
+
 if __name__ == '__main__':
     src, tpl, out = sys.argv[1:4]
     multi = '--multi' in sys.argv
@@ -89,8 +114,10 @@ if __name__ == '__main__':
     m = mesh(one, xs, ys, zs)
     m.export(os.path.join(out, 'bobby-panda-mini-single-colour.stl'))
     print('single colour', m.is_watertight, 'bodies', len(m.split(only_watertight=False)), 'size %.1f x %.1f x %.1f' % tuple(m.extents), len(m.faces), 'faces')
-    # single-colour print project (for painting): one part, filament 1, 0.08 mm layers, organic tree supports, seam at the back
-    s1 = dict(settings); s1.update(SINGLE)
+    # single-colour print project (for painting): one part, filament 1 = SUNLU PLA+ 2.0, 0.08 mm layers, organic tree supports, seam at the back
+    s1 = json.loads(json.dumps(settings)); s1.update(SINGLE)
+    for k, v in MINI_SPEEDS.items(): s1[k] = [v] * len(s1[k]) if isinstance(s1.get(k), list) else v
+    set_filament(s1, 1, SUNLU_PLA_PLUS_2)
     write_3mf(os.path.join(out, 'bobby-panda-mini-single-colour.3mf'), [('Bobby Panda (single colour, for painting)', 1, m)], s1)
     if multi:
         parts = []
