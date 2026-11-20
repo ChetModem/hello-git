@@ -136,12 +136,12 @@ MOUTH_R = on_face([(0, 23.5), (0, 22.98), (0.65, 22.78), (1.35, 22.86), (1.9, 23
 MOUTH_L = on_face([(0, 22.98), (-0.6, 22.82), (-1.0, 22.82)], -0.05)
 CHIN = on_face([(-2.7, 21.55), (-1.5, 21.0), (0, 20.85), (1.5, 21.0), (2.7, 21.55)], 0.03)        # soft double-chin fold
 # chest tuft: a cluster of short hair flicks (irregular so it reads as fur, not a symbol)
-TUFTS = [on_face(p, -0.02) for p in ([(-0.2, 15.9), (-0.35, 15.25)], [(0.45, 15.7), (0.35, 15.05)], [(-0.95, 15.3), (-0.95, 14.7)],
-                                     [(1.05, 15.15), (1.15, 14.55)], [(0.05, 14.7), (-0.05, 14.05)], [(-0.6, 14.25), (-0.75, 13.7)],
-                                     [(0.7, 14.15), (0.75, 13.6)], [(0.0, 13.45), (0.1, 12.95)])]
+TUFTS = [on_face([(x + 0.8, z - 1.3) for x, z in p], -0.02) for p in (
+    [(-0.2, 15.9), (-0.35, 15.25)], [(0.45, 15.7), (0.35, 15.05)], [(-0.95, 15.3), (-0.95, 14.7)], [(1.05, 15.15), (1.15, 14.55)],
+    [(0.05, 14.7), (-0.05, 14.05)], [(-0.6, 14.25), (-0.75, 13.7)], [(0.7, 14.15), (0.75, 13.6)], [(0.0, 13.45), (0.1, 12.95)])]   # below the strap
 CHEST_Y = surf_y(torso, [0.0], [17.2])[0]
-STRAP_P0 = {s: np.array([s * 3.55, 0, 21.2]) for s in (-1, 1)}
-STRAP_N = {s: nrm([s * 8.0, 0, 2.6]) for s in (-1, 1)}                                   # straps run from neck to armpit
+SASH_C = 16.6                                                                              # strap plane: x = z - SASH_C
+BUCKLE = np.array([-0.6, surf_y(torso, [-0.6], [16.0])[0] - 0.4, 16.0])
 
 def fields(X, Y, Z):
     """Return (solid, {part: claim}) for a chunk. Claims are signed fields (<0 = this colour wants it)."""
@@ -235,16 +235,13 @@ def fields(X, Y, Z):
         t = np.maximum(np.abs(X - s * 2.7) - 0.38, np.sqrt((Y - 8.1) ** 2 + (Z - 21.05) ** 2) - 2.05)
         ties = t if ties is None else np.minimum(ties, t)
     tors = torso(X, Y, Z)
-    shell = np.abs(tors - 0.22) - 0.3
-    straps = None
-    for s in (-1, 1):
-        st = np.maximum(np.maximum(shell, np.abs((X - STRAP_P0[s][0]) * STRAP_N[s][0] + (Z - STRAP_P0[s][2]) * STRAP_N[s][2]) - 0.68), 12.1 - Z)
-        wrap = np.maximum(np.maximum(shell, np.abs(Z - (12.55 + 0.12 * Y)) - 0.62), np.maximum(3.6 - s * X, -3.9 - Y))   # under the arm, round the side
-        st = np.minimum(st, wrap)
-        straps = st if straps is None else np.minimum(straps, st)
-    chest_strap = np.maximum(np.maximum(shell, np.abs(Z - 17.25) - 0.5), np.maximum(np.abs(X) - 4.6, Y))
-    straps = np.minimum(straps, chest_strap)
-    straps = np.minimum(straps, rbox(X, Y, Z, (0, CHEST_Y - 0.35, 17.25), (0.75, 0.32, 0.7), 0.15))   # chest buckle
+    # one cross-body strap: a closed band round the torso in a tilted plane, over the left shoulder,
+    # down across the chest to the right hip and back up under the pack (so it always connects)
+    shell = np.abs(smin(tors, arms, 0.9) - 0.22) - 0.3
+    sash = (X - Z + SASH_C) * 0.7071
+    straps = np.maximum(shell, np.abs(sash) - 0.75)
+    straps = np.minimum(straps, rbox(X, Y, Z, BUCKLE, (0.85, 0.32, 0.75), 0.15, inv(rotm([0, 1, 0], 45))))      # buckle
+    straps = smax(straps, -rbox(X, Y, Z, BUCKLE - [0, 0.3, 0], (0.42, 0.2, 0.33), 0.08, inv(rotm([0, 1, 0], 45))), 0.03)
     sa, sb = STAFF_TOP, STAFF_BOT
     sax = sb - sa; sL = np.linalg.norm(sax); su = sax / sL
     staff = cap(X, Y, Z, sa, sb, 1.0)
@@ -298,7 +295,7 @@ def fields(X, Y, Z):
     )
     return solid, claims
 
-ORDER = ['green', 'arms', 'tan', 'olive', 'sclera', 'black', 'base']     # then white = the rest
+ORDER = ['green', 'tan', 'arms', 'olive', 'sclera', 'black', 'base']     # then white = the rest
 SLOT = {'green': 7, 'arms': 1, 'tan': 5, 'olive': 4, 'sclera': 2, 'black': 1, 'base': 6, 'white': 2}
 
 def partition(solid, claims):
