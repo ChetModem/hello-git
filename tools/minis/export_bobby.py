@@ -85,8 +85,7 @@ if __name__ == '__main__':
               'green': d['green'], 'tan': d['tan'], 'olive': d['olive'], 'base': d['base']}
     settings = json.loads(zipfile.ZipFile(tpl).read('Metadata/project_settings.config'))
     os.makedirs(out, exist_ok=True)
-    one = fields['black']
-    for f in fields.values(): one = np.minimum(one, f)
+    one = d['solid'] if 'solid' in d.files else np.min(np.stack(list(fields.values())), 0)   # true surface, no seams at colour edges
     m = mesh(one, xs, ys, zs)
     m.export(os.path.join(out, 'bobby-panda-mini-single-colour.stl'))
     print('single colour', m.is_watertight, 'bodies', len(m.split(only_watertight=False)), 'size %.1f x %.1f x %.1f' % tuple(m.extents), len(m.faces), 'faces')

@@ -189,7 +189,7 @@ def fields(X, Y, Z):
     hips = np.maximum(np.minimum(legs - 0.6, ell(X, Y, Z, (0, 0.3, 7.2), (6.9, 6.2, 3.0))), Z - 9.0 - 0.8 * np.abs(X) / 6)
     black_fur = np.minimum(np.minimum(np.minimum(legs - 0.6, arms - 0.6), ears - 0.6 - tuft), np.minimum(np.minimum(yoke, hips), legs)) + tuft
     body = body - 0.15 * np.clip(-black_fur / 0.25, 0, 1)
-    # face relief: raised eye patches, lids, nose; carved mouth, chin crease, brow and chest fur strokes
+    # face: eye areas (colour guide only), nose; carved eye rings, mouth, chin fold and chest fur flicks
     patch = None; sclera = None; lid = None; pupil = None
     for s in (-1, 1):
         e = EYE[s]
@@ -200,10 +200,13 @@ def fields(X, Y, Z):
         pu = sph(X, Y, Z, e + [-s * 0.08, -0.12, -0.12], 0.4)
         patch = p if patch is None else np.minimum(patch, p); sclera = sc if sclera is None else np.minimum(sclera, sc)
         lid = ld if lid is None else np.minimum(lid, ld); pupil = pu if pupil is None else np.minimum(pupil, pu)
-    body = body - 0.16 * np.clip(-patch / 0.35, 0, 1)                                     # patches stand proud
-    body = body - 0.1 * np.clip(-sclera / 0.25, 0, 1)
-    body = body - 0.12 * np.clip(-pupil / 0.2, 0, 1)                                      # domed pupils
-    body = body - 0.14 * np.clip(-lid / 0.18, 0, 1)                                       # lid bulges, no rod ends
+    # eyes: flush with the face, just a slightly indented ring (0.3 mm wide, 0.2 mm deep) round each eye
+    ring = None
+    for s in (-1, 1):
+        R = inv(rotm([0, 1, 0], s * 17) @ rotm([0, 0, 1], -s * 18))
+        r_ = np.abs(ell(X, Y, Z, EYE[s] + [0, 0.1, -0.05], (1.05, 0.5, 0.62), R)) - 0.15
+        ring = r_ if ring is None else np.minimum(ring, r_)
+    body = smax(body, -np.maximum(ring, -body - 0.2), 0.05)
     nose = ell(X, Y, Z, NOSE, (0.98, 0.62, 0.62), inv(rotm([1, 0, 0], -12)))
     body = smin(body, nose, 0.3)
     grooves = np.minimum(poly(X, Y, Z, MOUTH_R, 0.2), poly(X, Y, Z, MOUTH_L, 0.2))
@@ -315,18 +318,20 @@ def build(vox, chunk=24):
     xs, ys, zs = grid(vox)
     names = ORDER + ['white']
     parts = {k: np.empty((len(xs), len(ys), len(zs)), F) for k in names}
+    solid_all = np.empty((len(xs), len(ys), len(zs)), F)
     X, Y = np.meshgrid(xs, ys, indexing='ij')
     for i0 in range(0, len(zs), chunk):
         zc = zs[i0:i0 + chunk]
         XX = np.repeat(X[..., None], len(zc), 2); YY = np.repeat(Y[..., None], len(zc), 2); ZZ = np.broadcast_to(zc, XX.shape).astype(F)
         solid, claims = fields(XX, YY, ZZ)
         for k, v in partition(solid, claims).items(): parts[k][:, :, i0:i0 + chunk] = v
+        solid_all[:, :, i0:i0 + chunk] = solid
         print(f'\r z {zc[-1]:.1f}', end='', flush=True)
     print()
-    return xs, ys, zs, parts
+    return xs, ys, zs, parts, solid_all
 
 if __name__ == '__main__':
     vox = float(sys.argv[1]) if len(sys.argv) > 1 else 0.1
-    xs, ys, zs, parts = build(vox)
-    np.savez(f'bobby_fields_{vox:g}.npz', xs=xs, ys=ys, zs=zs, **parts)
+    xs, ys, zs, parts, solid = build(vox)
+    np.savez(f'bobby_fields_{vox:g}.npz', xs=xs, ys=ys, zs=zs, solid=solid, **parts)
     print('saved', {k: int((v < 0).sum()) for k, v in parts.items()})

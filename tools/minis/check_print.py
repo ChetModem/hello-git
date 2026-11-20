@@ -6,7 +6,7 @@ and overhang regions steeper than 45 degrees, grouped in 3D and reported by loca
 import sys, numpy as np
 from scipy import ndimage as nd
 d = np.load(sys.argv[1]); xs, ys, zs = d['xs'], d['ys'], d['zs']
-solid = np.min(np.stack([d[k] for k in d.files if k not in ('xs', 'ys', 'zs')]), 0) < 0
+solid = (d['solid'] if 'solid' in d.files else np.min(np.stack([d[k] for k in d.files if k not in ('xs', 'ys', 'zs')]), 0)) < 0
 vox = float(xs[1] - xs[0])
 k = int(round(0.1 / vox))                   # 45 deg: each 0.1 mm layer may step out 0.1 mm
 st = nd.generate_binary_structure(2, 1)

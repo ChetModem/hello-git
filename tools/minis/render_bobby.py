@@ -11,9 +11,10 @@ COL = {'green': (70, 150, 60), 'arms': (30, 30, 32), 'black': (30, 30, 32), 'tan
 
 def load(path):
     z = np.load(path); xs, ys, zs = z['xs'], z['ys'], z['zs']
-    names = [k for k in z.files if k not in ('xs', 'ys', 'zs')]
+    names = [k for k in z.files if k not in ('xs', 'ys', 'zs', 'solid')]
     stack = np.stack([z[k] for k in names])
-    return xs, ys, zs, names, stack.min(0), stack.argmin(0).astype(np.uint8)
+    S = z['solid'] if 'solid' in z.files else stack.min(0)        # true surface (no colour-seam creases)
+    return xs, ys, zs, names, S, stack.argmin(0).astype(np.uint8)
 
 def render(xs, ys, zs, names, S, lab, az, el, H=900, Wd=700, scale=None, ctr=(0, 0, 15.8)):
     vox = xs[1] - xs[0]; o = np.array([xs[0], ys[0], zs[0]])
