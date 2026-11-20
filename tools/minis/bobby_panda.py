@@ -91,10 +91,11 @@ BASE_TOP = 3.0
 LEG = {s: dict(hip=(s * 4.0, 0.8, 9.8), ank=(s * 3.9, -0.5, 4.7), foot=(s * 4.1, -1.9, 4.0)) for s in (-1, 1)}
 HEAD_C, HEAD_R = (0, -0.6, 24.6), (5.7, 5.3, 5.3)
 # raised right paw (-x) holds the bamboo shoot to the corner of the mouth; left paw (+x) rests on the belly
-RA = dict(S=(-6.0, 0.6, 19.6), E=(-8.8, -2.2, 15.6), W=(-6.9, -5.5, 20.4), F=(-6.25, -6.45, 21.8))
-LA = dict(S=(6.0, 0.6, 19.6), E=(8.7, 0.0, 14.6), W=(6.7, -4.0, 11.9), F=(6.0, -4.9, 11.5))
+RA = dict(S=(-6.0, 0.6, 19.6), E=(-7.75, -1.4, 15.0), W=(-6.9, -5.5, 20.7), F=(-6.25, -6.45, 22.2))   # elbow rests on the flank
+LA = dict(S=(6.0, 0.6, 19.6), E=(8.2, 0.2, 14.4), W=(6.6, -4.0, 11.9), F=(6.0, -4.9, 11.5))
 BAM_B = np.array([-1.45, -5.95, 22.7])
 BAM_A = BAM_B + (np.array([-11.0, -7.25, 21.35]) - BAM_B) * 0.85      # short stick, held like a cigar
+BAM_A[2] = 23.3                                                         # outer end tipped up: grows out of the fist
 
 def torso(X, Y, Z):
     d = ell(X, Y, Z, (0, 0.3, 11.7), (8.0, 6.8, 7.4))
@@ -132,9 +133,11 @@ EYE = {s: on_face([(s * 2.35, 25.65)])[0] for s in (-1, 1)}
 NOSE = on_face([(0, 24.05)], 0.25)[0]
 MOUTH_R = on_face([(0, 23.5), (0, 22.98), (0.65, 22.78), (1.35, 22.86), (1.9, 23.12), (2.15, 23.38)], -0.05)
 MOUTH_L = on_face([(0, 22.98), (-0.6, 22.82), (-1.0, 22.82)], -0.05)
-CHIN = on_face([(-2.7, 21.55), (-1.5, 21.0), (0, 20.85), (1.5, 21.0), (2.7, 21.55)], -0.05)
-TUFTS = [on_face(p, -0.02) for p in ([(-1.3, 15.7), (-1.0, 15.0), (-1.05, 14.4)], [(-0.3, 15.9), (-0.45, 15.1), (-0.25, 14.5)],
-                                     [(0.7, 15.6), (0.55, 14.9), (0.75, 14.2)], [(-0.7, 13.9), (-0.85, 13.2)], [(0.2, 13.8), (0.35, 13.0)])]
+CHIN = on_face([(-2.7, 21.55), (-1.5, 21.0), (0, 20.85), (1.5, 21.0), (2.7, 21.55)], 0.03)        # soft double-chin fold
+# chest tuft: a cluster of short hair flicks (irregular so it reads as fur, not a symbol)
+TUFTS = [on_face(p, -0.02) for p in ([(-0.2, 15.9), (-0.35, 15.25)], [(0.45, 15.7), (0.35, 15.05)], [(-0.95, 15.3), (-0.95, 14.7)],
+                                     [(1.05, 15.15), (1.15, 14.55)], [(0.05, 14.7), (-0.05, 14.05)], [(-0.6, 14.25), (-0.75, 13.7)],
+                                     [(0.7, 14.15), (0.75, 13.6)], [(0.0, 13.45), (0.1, 12.95)])]
 CHEST_Y = surf_y(torso, [0.0], [17.2])[0]
 STRAP_P0 = {s: np.array([s * 3.55, 0, 21.2]) for s in (-1, 1)}
 STRAP_N = {s: nrm([s * 8.0, 0, 2.6]) for s in (-1, 1)}                                   # straps run from neck to armpit
@@ -143,7 +146,7 @@ def fields(X, Y, Z):
     """Return (solid, {part: claim}) for a chunk. Claims are signed fields (<0 = this colour wants it)."""
     # ---------- panda body
     body = core(X, Y, Z)
-    body = smin(body, ell(X, Y, Z, (0, 6.7, 8.0), (1.3, 0.95, 1.2)), 0.6)                       # stubby tail
+    body = smin(body, ell(X, Y, Z, (0, 6.3, 9.4), (1.3, 0.75, 1.15)), 0.6)                      # stubby tail, pressed into the rump
     legs = None
     for s in (-1, 1):
         L = LEG[s]
@@ -155,6 +158,8 @@ def fields(X, Y, Z):
             d = np.maximum(d, -g)
         legs = d if legs is None else np.minimum(legs, d)
     body = smin(body, legs, 1.6)
+    arch = np.maximum((5.9 - 1.25 * np.abs(X)) - Z, ell(X, Y, Z, (0, 0.2, 8.0), (5.5, 5.0, 5.0)))     # self-supporting crotch
+    body = smin(body, arch, 0.5)
     # ears with a cupped inside
     ears = None
     for s in (-1, 1):
@@ -177,6 +182,12 @@ def fields(X, Y, Z):
     arm_r, arm_l = arm(RA, True), arm(LA, False)
     arms = np.minimum(arm_r, arm_l)
     body = smin(body, arms, 0.9)
+    # painting guides: black fur areas stand 0.15 mm proud with a tufted edge
+    tuft = 0.1 * blotch(X, Y, Z)
+    yoke = np.maximum(np.abs(Z - (19.4 + 0.22 * Y)) - 2.6, -(Y + 1.2))                        # shoulder band over the back
+    hips = np.maximum(np.minimum(legs - 0.6, ell(X, Y, Z, (0, 0.3, 7.2), (6.9, 6.2, 3.0))), Z - 9.0 - 0.8 * np.abs(X) / 6)
+    black_fur = np.minimum(np.minimum(np.minimum(legs - 0.6, arms - 0.6), ears - 0.6 - tuft), np.minimum(np.minimum(yoke, hips), legs)) + tuft
+    body = body - 0.15 * np.clip(-black_fur / 0.25, 0, 1)
     # face relief: raised eye patches, lids, nose; carved mouth, chin crease, brow and chest fur strokes
     patch = None; sclera = None; lid = None; pupil = None
     for s in (-1, 1):
@@ -190,13 +201,14 @@ def fields(X, Y, Z):
         lid = ld if lid is None else np.minimum(lid, ld); pupil = pu if pupil is None else np.minimum(pupil, pu)
     body = body - 0.16 * np.clip(-patch / 0.35, 0, 1)                                     # patches stand proud
     body = body - 0.1 * np.clip(-sclera / 0.25, 0, 1)
+    body = body - 0.12 * np.clip(-pupil / 0.2, 0, 1)                                      # domed pupils
     body = smin(body, lid, 0.12)
     nose = ell(X, Y, Z, NOSE, (0.98, 0.62, 0.62), inv(rotm([1, 0, 0], -12)))
     body = smin(body, nose, 0.3)
     grooves = np.minimum(poly(X, Y, Z, MOUTH_R, 0.2), poly(X, Y, Z, MOUTH_L, 0.2))
     grooves = np.minimum(grooves, sph(X, Y, Z, MOUTH_R[-1] + [0, 0.05, 0], 0.27))            # smirk dimple
-    grooves = np.minimum(grooves, poly(X, Y, Z, CHIN[1:-1], 0.17))
-    for t in TUFTS: grooves = np.minimum(grooves, poly(X, Y, Z, t, 0.13))
+    grooves = np.minimum(grooves, poly(X, Y, Z, CHIN[1:-1], 0.16))
+    for t in TUFTS: grooves = np.minimum(grooves, rcone(X, Y, Z, t[0], t[1], 0.2, 0.1))   # tapered flicks
     body = smax(body, -grooves, 0.08)
         # ---------- backpack (tan), bedroll (olive), straps (tan)
     tilt = inv(rotm([1, 0, 0], -7))
@@ -211,13 +223,15 @@ def fields(X, Y, Z):
         pack = np.minimum(pack, buckle)
         pack = np.minimum(pack, rbox(X, Y, Z, (s * 4.55, 7.9, 13.6), (0.9, 1.35, 1.9), 0.7))       # side pouches
     pack = smax(pack, -rbox(X, Y, Z, (0, 10.6, 14.35), (2.8, 0.3, 0.07), 0.02), 0.02)             # pocket flap seam
-    roll = rcyl_x(X, Y, Z, (0, 8.1, 21.05), 1.8, 5.5, 0.85)
+    yb = 0.0 + 6.8 * np.sqrt(np.clip(1 - (X / 8.0) ** 2, 0.05, 1))                           # just inside the back at hip height
+    pack = smax(pack, (11.0 + (Y - yb)) - Z, 0.2)                                             # 45-degree underside from the back
+    roll = rcyl_x(X, Y, Z, (0, 8.1, 21.05), 1.8, 4.9, 0.85)
     for r_ in (0.55, 1.15):                                                                  # rolled-up spiral rings on the ends
-        ring = np.maximum(np.abs(np.sqrt((Y - 8.1) ** 2 + (Z - 21.05) ** 2) - r_) - 0.1, -(np.abs(X) - 5.3))
+        ring = np.maximum(np.abs(np.sqrt((Y - 8.1) ** 2 + (Z - 21.05) ** 2) - r_) - 0.1, -(np.abs(X) - 4.7))
         roll = np.maximum(roll, -ring)
     ties = None
     for s in (-1, 1):
-        t = np.maximum(np.abs(X - s * 3.0) - 0.38, np.sqrt((Y - 8.1) ** 2 + (Z - 21.05) ** 2) - 2.05)
+        t = np.maximum(np.abs(X - s * 2.7) - 0.38, np.sqrt((Y - 8.1) ** 2 + (Z - 21.05) ** 2) - 2.05)
         ties = t if ties is None else np.minimum(ties, t)
     tors = torso(X, Y, Z)
     shell = np.abs(tors - 0.22) - 0.3
@@ -229,23 +243,26 @@ def fields(X, Y, Z):
     straps = np.minimum(straps, chest_strap)
     straps = np.minimum(straps, rbox(X, Y, Z, (0, CHEST_Y - 0.35, 17.25), (0.75, 0.32, 0.7), 0.15))   # chest buckle
     tan = np.minimum(np.minimum(pack, straps), ties)
-    # ---------- bamboo stick (green), held like a cigar: node rings, slanted hollow cut end; plus sprouts on the base
+    # ---------- bamboo stick (green), held like a cigar: node rings, slanted cut end; plus two cut stumps on the base
     ax = BAM_B - BAM_A; Lb = np.linalg.norm(ax); u = ax / Lb
     bam = rcone(X, Y, Z, BAM_A, BAM_B, 0.9, 0.78)
     for t in (0.12, 0.8):                                                                # nodes: a crisp ring with a groove above it
         c = BAM_A + ax * t
-        bam = smin(bam, cap(X, Y, Z, c - u * 0.12, c + u * 0.12, 1.0 - 0.1 * t), 0.08)
+        bam = smin(bam, cap(X, Y, Z, c - u * 0.08, c + u * 0.08, 0.9 - 0.12 * t + 0.1), 0.03)   # node ring 0.1 mm proud
     cut_n = nrm(-u + np.array([0, 0, 1.1]))                                                  # slanted cut at the outer end
     bam = np.maximum(bam, ((X - BAM_A[0] - u[0] * 0.5) * cut_n[0] + (Y - BAM_A[1] - u[1] * 0.5) * cut_n[1] + (Z - BAM_A[2] - u[2] * 0.5) * cut_n[2]))
-    bam = np.maximum(bam, -cap(X, Y, Z, BAM_A - u, BAM_A + u * 0.8, 0.45))                  # hollow end
-    sprout = rcone(X, Y, Z, (-8.6, -6.3, BASE_TOP - 0.3), (-8.75, -6.45, 7.4), 1.2, 0.35)
-    for t in (0.35, 0.65):
-        z0 = BASE_TOP + (7.4 - BASE_TOP) * t
-        sprout = smin(sprout, cap(X, Y, Z, (-8.65, -6.35, z0 - 0.12), (-8.65, -6.35, z0 + 0.12), 1.0 - 0.45 * t), 0.15)
-    sprout = np.minimum(sprout, leaf(X, Y, Z, (-8.6, -6.4, 5.2), [-0.9, -0.5, 0.8], [0.4, -0.5, 0.6], 3.6, 1.5, 1.2, 0.3))
-    sprout = np.minimum(sprout, leaf(X, Y, Z, (-8.7, -6.2, 6.3), [0.8, 0.2, 1.0], [-0.6, 0.2, 0.6], 3.2, 1.4, 1.2, 0.25))
-    sprout = np.minimum(sprout, rcone(X, Y, Z, (-6.9, -8.6, BASE_TOP - 0.3), (-6.95, -8.7, 4.9), 0.75, 0.3))
-    sprout = np.minimum(sprout, leaf(X, Y, Z, (-7.0, -8.6, 3.6), [0.9, -0.6, 0.5], [-0.3, 0.3, 0.9], 3.0, 1.4, 1.2, 0.25))
+    bam = smax(bam, -sph(X, Y, Z, BAM_A + u * 0.05 + [0, 0, 0.55], 0.5), 0.1)                 # shallow pith dimple on the cut (no thin lip)
+    def stump(cx, cy, h, r, lean):                       # cut bamboo stump: node rings, slanted top
+        a_, b_ = np.array([cx, cy, BASE_TOP - 0.3]), np.array([cx + lean[0], cy + lean[1], BASE_TOP + h])
+        d = cap(X, Y, Z, a_, b_ + [0, 0, 0.6], r)
+        ax_ = nrm(b_ - a_)
+        for t in (0.45, 0.85):
+            c = a_ + (b_ - a_) * t
+            d = smin(d, cap(X, Y, Z, c - ax_ * 0.08, c + ax_ * 0.08, r + 0.1), 0.03)
+        n = nrm(ax_ + [0.5, -0.4, 0])                                                     # slanted cut
+        d = np.maximum(d, (X - b_[0]) * n[0] + (Y - b_[1]) * n[1] + (Z - b_[2]) * n[2])
+        return smax(d, -sph(X, Y, Z, b_ + ax_ * 0.45, r - 0.45), 0.1)                         # shallow dimple, no thin lip
+    sprout = np.minimum(stump(-8.6, -6.3, 4.2, 1.05, (-0.15, -0.1)), stump(-6.7, -8.7, 2.4, 0.85, (0.1, -0.1)))
     green = np.minimum(bam, sprout)
     # ---------- flagstone base (grey) with a pebble
     r = np.sqrt(X * X + Y * Y)
@@ -254,7 +271,9 @@ def fields(X, Y, Z):
     d1, d2 = np.take_along_axis(dd, o[:1], 0)[0], np.take_along_axis(dd, o[1:2], 0)[0]
     edge = (np.sqrt(d2) - np.sqrt(d1)) / 2
     top = BASE_TOP - 0.15 + SEED_H[o[0]]
-    base = np.maximum(np.sqrt(np.maximum(r - 12.5 + 0.7, 0) ** 2 + np.maximum(np.abs(Z - 1.5) - 1.5 + 0.7, 0) ** 2) - 0.7, Z - top)
+    qr, qz = r - 12.5 + 0.7, Z - BASE_TOP + 0.7
+    base = np.sqrt(np.maximum(qr, 0) ** 2 + np.maximum(qz, 0) ** 2) + np.minimum(np.maximum(qr, qz), 0) - 0.7    # rounded top edge
+    base = np.maximum(np.maximum(base, Z - top), (r - 12.5 + 0.4 - Z) * 0.7071)                                 # 0.4 mm chamfer at the bed
     base = smax(base, -np.maximum(edge - 0.16, top - 0.35 - Z), 0.08)                          # cracks between the stones
     base = np.minimum(base, ell(X, Y, Z, (8.3, -5.6, BASE_TOP), (1.3, 1.2, 0.75)))
     base = np.minimum(base, ell(X, Y, Z, (9.3, -3.9, BASE_TOP - 0.1), (0.8, 0.7, 0.55)))
@@ -265,12 +284,7 @@ def fields(X, Y, Z):
     solid = np.minimum(solid, green)
     solid = np.minimum(solid, base)
     solid = np.maximum(solid, -Z)
-    # ---------- colour claims (priority order is applied in partition())
-    tuft = 0.1 * blotch(X, Y, Z)
-    black_limbs = np.minimum(np.minimum(legs - 0.6, arms - 0.6), ears - 0.6 - tuft) + tuft
-    yoke = np.maximum(np.abs(Z - (19.4 + 0.22 * Y)) - 2.6, -(Y + 1.2))                        # shoulder band over the back
-    hips = np.maximum(np.minimum(legs - 0.6, ell(X, Y, Z, (0, 0.3, 7.2), (6.9, 6.2, 3.0))), Z - 9.0 - 0.8 * np.abs(X) / 6)
-    black_body = np.minimum(np.minimum(yoke, hips), legs) + tuft
+    # ---------- colour claims (paint guide; priority order is applied in partition())
     black_face = np.minimum(np.minimum(patch, lid), np.minimum(nose - 0.05, pupil))
     claims = dict(
         green=green,
@@ -278,7 +292,7 @@ def fields(X, Y, Z):
         tan=tan,
         olive=roll,
         sclera=np.maximum(sclera, -pupil),
-        black=np.minimum(np.minimum(black_limbs, black_body), black_face),
+        black=np.minimum(black_fur, black_face),
         base=base,
     )
     return solid, claims

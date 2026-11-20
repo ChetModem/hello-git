@@ -1,0 +1,18 @@
+islands (start in mid-air):
+overhang regions > 45 deg (projected area mm2, z range, centre):
+     9.0 mm2  z   4.0-  5.7  centre ( -0.1,  0.1,  4.5)
+     1.9 mm2  z  22.0- 22.3  centre ( -2.7, -6.2, 22.0)
+     1.4 mm2  z   9.1-  9.9  centre (  6.4, -5.0,  9.3)
+     1.4 mm2  z  16.8- 16.8  centre (  2.5, -5.8, 16.8)
+     1.4 mm2  z  16.8- 16.8  centre ( -2.6, -5.8, 16.8)
+     1.2 mm2  z  22.3- 22.7  centre ( -9.2, -7.0, 22.4)
+     1.2 mm2  z  12.2- 13.2  centre ( -8.7, -1.8, 12.7)
+     1.1 mm2  z  12.5- 12.5  centre ( -6.5, -4.8, 12.5)
+     1.1 mm2  z  12.5- 12.5  centre (  6.4,  4.6, 12.5)
+     1.1 mm2  z  12.5- 12.5  centre ( -6.5,  4.6, 12.5)
+     0.9 mm2  z  11.5- 12.5  centre (  9.1,  0.5, 12.0)
+thin spots (< 0.8 mm thick):
+   0.094 mm3 at ( -9.7, -7.0, 22.6)
+   0.077 mm3 at ( -9.4, -5.9,  7.6)
+   0.041 mm3 at ( -5.6, -5.9, 13.1)
+   0.018 mm3 at ( -4.7, -5.4, 15.8)

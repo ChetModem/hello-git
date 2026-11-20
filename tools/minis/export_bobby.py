@@ -1,6 +1,6 @@
-"""Mesh the Bobby Panda fields and write the Bambu multi-colour project + a single-colour STL.
+"""Mesh the Bobby Panda fields and write the single-colour print project + STL (and, with --multi, the multi-colour project).
 
-    python3 export_bobby.py bobby_fields_0.1.npz <template.3mf> <out_dir>
+    python3 export_bobby.py bobby_fields_0.1.npz <template.3mf> <out_dir> [--multi]
 
 The template 3MF only donates its printer/filament settings (Metadata/project_settings.config);
 models, parts and metadata are written fresh.
@@ -71,27 +71,33 @@ def write_3mf(path, parts, settings):
         z.writestr('Metadata/model_settings.config', cfg)
         z.writestr('Metadata/project_settings.config', json.dumps(settings, indent=4))
 
+SINGLE = {'layer_height': '0.08', 'initial_layer_print_height': '0.2', 'wall_loops': '3', 'sparse_infill_density': '15%',
+          'sparse_infill_pattern': 'gyroid', 'seam_position': 'back',
+          'enable_support': '1', 'support_type': 'tree(auto)', 'support_style': 'tree_organic', 'support_threshold_angle': '40',
+          'support_on_build_plate_only': '0', 'support_top_z_distance': '0.08', 'support_bottom_z_distance': '0.08',
+          'support_interface_top_layers': '2'}
+
 if __name__ == '__main__':
     src, tpl, out = sys.argv[1:4]
+    multi = '--multi' in sys.argv
     d = np.load(src); xs, ys, zs = d['xs'], d['ys'], d['zs']
     fields = {'black': np.minimum(d['black'], d['arms']), 'white': np.minimum(d['white'], d['sclera']),
               'green': d['green'], 'tan': d['tan'], 'olive': d['olive'], 'base': d['base']}
-    parts = []
-    for k, f in fields.items():
-        m = mesh(f, xs, ys, zs)
-        print(f'{k:6s} faces {len(m.faces):7d} watertight {m.is_watertight} volume {m.volume:7.1f} mm3 bodies {len(m.split(only_watertight=False))}')
-        parts.append((NAMES[k][0], NAMES[k][1], m))
     settings = json.loads(zipfile.ZipFile(tpl).read('Metadata/project_settings.config'))
-    # small figure: 0.1 mm layers, 3 walls, 15% gyroid, tree supports for the raised arm, leaves, belly and backpack
-    settings.update({'layer_height': '0.1', 'initial_layer_print_height': '0.2', 'wall_loops': '3', 'sparse_infill_density': '15%',
-                     'sparse_infill_pattern': 'gyroid', 'enable_support': '1', 'support_type': 'tree(auto)', 'support_style': 'tree_organic',
-                     'support_threshold_angle': '35', 'support_on_build_plate_only': '0', 'tree_support_branch_diameter': '2',
-                     'support_top_z_distance': '0.1', 'support_bottom_z_distance': '0.1', 'support_interface_top_layers': '3',
-                     'prime_tower_width': '25', 'enable_prime_tower': '1'})
     os.makedirs(out, exist_ok=True)
-    write_3mf(os.path.join(out, 'bobby-panda-mini.3mf'), parts, settings)
     one = fields['black']
     for f in fields.values(): one = np.minimum(one, f)
     m = mesh(one, xs, ys, zs)
     m.export(os.path.join(out, 'bobby-panda-mini-single-colour.stl'))
-    print('single colour', m.is_watertight, 'size %.1f x %.1f x %.1f' % tuple(m.extents), len(m.faces), 'faces')
+    print('single colour', m.is_watertight, 'bodies', len(m.split(only_watertight=False)), 'size %.1f x %.1f x %.1f' % tuple(m.extents), len(m.faces), 'faces')
+    # single-colour print project (for painting): one part, filament 1, 0.08 mm layers, organic tree supports, seam at the back
+    s1 = dict(settings); s1.update(SINGLE)
+    write_3mf(os.path.join(out, 'bobby-panda-mini-single-colour.3mf'), [('Bobby Panda (single colour, for painting)', 1, m)], s1)
+    if multi:
+        parts = []
+        for k, f in fields.items():
+            pm = mesh(f, xs, ys, zs)
+            print(f'{k:6s} faces {len(pm.faces):7d} watertight {pm.is_watertight} volume {pm.volume:7.1f} mm3')
+            parts.append((NAMES[k][0], NAMES[k][1], pm))
+        s2 = dict(settings); s2.update(SINGLE); s2.update({'layer_height': '0.1', 'flush_multiplier': ['1.0', '1.0'], 'enable_prime_tower': '1'})
+        write_3mf(os.path.join(out, 'bobby-panda-mini.3mf'), parts, s2)
