@@ -1,6 +1,6 @@
 islands (start in mid-air):
-  z  25.1  at x  -2.5 y  -5.3  area 0.01 mm2
-  z  25.1  at x   2.5 y  -5.3  area 0.01 mm2
+  z  25.1  at x  -2.7 y  -5.2  area 0.01 mm2
+  z  25.1  at x   2.7 y  -5.2  area 0.01 mm2
 overhang regions > 45 deg (projected area mm2, z range, centre):
      9.0 mm2  z   4.0-  5.7  centre ( -0.1,  0.1,  4.5)
      1.9 mm2  z  22.0- 22.3  centre ( -2.7, -6.2, 22.0)

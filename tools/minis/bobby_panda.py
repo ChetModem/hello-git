@@ -130,7 +130,7 @@ def on_face(pts, out=0.0):
     return [np.array([x, yy - out, z]) for (x, z), yy in zip(pts, y)]
 
 # precomputed surface anchors for face details
-EYE = {s: on_face([(s * 2.35, 25.65)])[0] for s in (-1, 1)}
+EYE = {s: on_face([(s * 2.6, 25.55)])[0] for s in (-1, 1)}
 NOSE = on_face([(0, 24.05)], 0.25)[0]
 MOUTH_R = on_face([(0, 23.5), (0, 22.98), (0.65, 22.78), (1.35, 22.86), (1.9, 23.12), (2.15, 23.38)], -0.05)
 MOUTH_L = on_face([(0, 22.98), (-0.6, 22.82), (-1.0, 22.82)], -0.05)
@@ -190,23 +190,28 @@ def fields(X, Y, Z):
     black_fur = np.minimum(np.minimum(np.minimum(legs - 0.6, arms - 0.6), ears - 0.6 - tuft), np.minimum(np.minimum(yoke, hips), legs)) + tuft
     body = body - 0.15 * np.clip(-black_fur / 0.25, 0, 1)
     # face: eye areas (colour guide only), nose; carved eye rings, mouth, chin fold and chest fur flicks
-    patch = None; sclera = None; lid = None; pupil = None
+    # eyes (after the reference): wide black patches, squinting almond-shaped whites under a straight heavy lid.
+    # All flush with the face; shallow lines give paint edges: one round each patch, one round each white,
+    # and a small dimple for the pupil peeking out under the lid.
+    patch = None; sclera = None; pupil = None; lines = None
     for s in (-1, 1):
         e = EYE[s]
-        R = inv(rotm([0, 1, 0], s * 17) @ rotm([0, 0, 1], -s * 18))
-        p = ell(X, Y, Z, e + [0, 0.25, 0], (1.75, 1.4, 1.1), R)
-        sc = ell(X, Y, Z, e + [0, -0.05, -0.1], (0.95, 0.5, 0.5), R)
-        ld = np.maximum(ell(X, Y, Z, e + [0, 0.05, 0.22], (1.05, 0.6, 0.42), R), p + 0.15)       # heavy upper lid, kept inside the patch
-        pu = sph(X, Y, Z, e + [-s * 0.08, -0.12, -0.12], 0.4)
+        R = inv(rotm([0, 1, 0], s * 15) @ rotm([0, 0, 1], -s * 10))
+        p = ell(X, Y, Z, e + [0, 0.3, 0.05], (2.1, 1.4, 1.3), R)                                   # big horizontal patch
+        lx, ly, lz = local(X, Y, Z, e, R)
+        sc = np.maximum(ell(X, Y, Z, e + [0, 0, -0.05], (1.2, 0.8, 0.5), R), lz - 0.2)           # almond, flat top = lid
+        pu = sph(X, Y, Z, e + [-s * 0.15, -0.25, 0.02], 0.36)
+        ln = np.minimum(np.abs(p) - 0.14, np.abs(sc) - 0.13)
         patch = p if patch is None else np.minimum(patch, p); sclera = sc if sclera is None else np.minimum(sclera, sc)
-        lid = ld if lid is None else np.minimum(lid, ld); pupil = pu if pupil is None else np.minimum(pupil, pu)
-    # eyes: flush with the face, just a slightly indented ring (0.3 mm wide, 0.2 mm deep) round each eye
-    ring = None
-    for s in (-1, 1):
-        R = inv(rotm([0, 1, 0], s * 17) @ rotm([0, 0, 1], -s * 18))
-        r_ = np.abs(ell(X, Y, Z, EYE[s] + [0, 0.1, -0.05], (1.05, 0.5, 0.62), R)) - 0.15
-        ring = r_ if ring is None else np.minimum(ring, r_)
-    body = smax(body, -np.maximum(ring, -body - 0.2), 0.05)
+        pupil = pu if pupil is None else np.minimum(pupil, pu); lines = ln if lines is None else np.minimum(lines, ln)
+    body = smax(body, -np.maximum(lines, -body - 0.18), 0.05)
+    body = smax(body, -np.maximum(np.maximum(pupil, sclera - 0.02), -body - 0.12), 0.05)       # pupil dimple, inside the white
+    # tummy patch: the same shallow line round an oval on the belly, with a tufted (sawtooth) fur edge
+    bu, bv = X / 3.7, (Z - 12.3) / 3.5
+    rho, th = np.sqrt(bu * bu + bv * bv), np.arctan2(bv, bu)
+    edge = 1 + 0.08 * np.abs(2 * ((th * 16 / (2 * np.pi)) % 1.0) - 1)                      # continuous zigzag: 16 fur tufts
+    belly_line = np.maximum(np.abs(rho - edge) * 3.6 - 0.15, Y + 1.0)                      # front of the belly only
+    body = smax(body, -np.maximum(belly_line, -body - 0.2), 0.05)
     nose = ell(X, Y, Z, NOSE, (0.98, 0.62, 0.62), inv(rotm([1, 0, 0], -12)))
     body = smin(body, nose, 0.3)
     grooves = np.minimum(poly(X, Y, Z, MOUTH_R, 0.2), poly(X, Y, Z, MOUTH_L, 0.2))
@@ -286,7 +291,7 @@ def fields(X, Y, Z):
     solid = np.minimum(solid, base)
     solid = np.maximum(solid, -Z)
     # ---------- colour claims (paint guide; priority order is applied in partition())
-    black_face = np.minimum(np.minimum(patch, lid), np.minimum(nose - 0.05, pupil))
+    black_face = np.minimum(patch, np.minimum(nose - 0.05, pupil))
     claims = dict(
         green=green,
         arms=arms - 0.6,               # arms go over the straps
