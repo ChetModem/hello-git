@@ -93,7 +93,8 @@ HEAD_C, HEAD_R = (0, -0.6, 24.6), (5.7, 5.3, 5.3)
 # raised right paw (-x) holds the bamboo shoot to the corner of the mouth; left paw (+x) rests on the belly
 RA = dict(S=(-6.0, 0.6, 19.6), E=(-8.8, -2.2, 15.6), W=(-6.9, -5.5, 20.4), F=(-6.25, -6.45, 21.8))
 LA = dict(S=(6.0, 0.6, 19.6), E=(8.7, 0.0, 14.6), W=(6.7, -4.0, 11.9), F=(6.0, -4.9, 11.5))
-BAM_A, BAM_B = np.array([-11.0, -7.25, 21.35]), np.array([-1.45, -5.95, 22.7])
+BAM_B = np.array([-1.45, -5.95, 22.7])
+BAM_A = BAM_B + (np.array([-11.0, -7.25, 21.35]) - BAM_B) * 0.85      # short stick, held like a cigar
 
 def torso(X, Y, Z):
     d = ell(X, Y, Z, (0, 0.3, 11.7), (8.0, 6.8, 7.4))
@@ -228,21 +229,15 @@ def fields(X, Y, Z):
     straps = np.minimum(straps, chest_strap)
     straps = np.minimum(straps, rbox(X, Y, Z, (0, CHEST_Y - 0.35, 17.25), (0.75, 0.32, 0.7), 0.15))   # chest buckle
     tan = np.minimum(np.minimum(pack, straps), ties)
-    # ---------- bamboo shoot (green): node rings, slanted cut end, leaves tied on, plus a sprout on the base
+    # ---------- bamboo stick (green), held like a cigar: node rings, slanted hollow cut end; plus sprouts on the base
     ax = BAM_B - BAM_A; Lb = np.linalg.norm(ax); u = ax / Lb
     bam = rcone(X, Y, Z, BAM_A, BAM_B, 0.9, 0.78)
-    for t in (0.2, 0.52, 0.8):                                                                # nodes: a crisp ring with a groove above it
+    for t in (0.12, 0.8):                                                                # nodes: a crisp ring with a groove above it
         c = BAM_A + ax * t
         bam = smin(bam, cap(X, Y, Z, c - u * 0.12, c + u * 0.12, 1.0 - 0.1 * t), 0.08)
     cut_n = nrm(-u + np.array([0, 0, 1.1]))                                                  # slanted cut at the outer end
     bam = np.maximum(bam, ((X - BAM_A[0] - u[0] * 0.5) * cut_n[0] + (Y - BAM_A[1] - u[1] * 0.5) * cut_n[1] + (Z - BAM_A[2] - u[2] * 0.5) * cut_n[2]))
-    bam = np.maximum(bam, -cap(X, Y, Z, BAM_A - u, BAM_A + u * 1.3, 0.45))                  # hollow end
-    tie = BAM_A + ax * 0.11
-    bam = smin(bam, cap(X, Y, Z, tie - u * 0.15, tie + u * 0.15, 1.15), 0.15)
-    leaves = leaf(X, Y, Z, tie + [0.1, -0.7, -0.5], [-0.2, -0.35, -1], [0.3, -1, 0.05], 5.2, 1.9, 1.2, 0.35)
-    leaves = np.minimum(leaves, leaf(X, Y, Z, tie + [-0.4, -0.1, -0.6], [-0.7, 0.35, -1], [-1, -0.4, 0.2], 4.4, 1.7, 1.2, 0.3))
-    leaves = np.minimum(leaves, leaf(X, Y, Z, BAM_A + ax * 0.03 + [0, 0, 0.6], [-0.55, -0.2, 1], [0.1, -1, 0.1], 4.0, 1.7, 1.2, 0.3))
-    bam = smin(bam, leaves, 0.25)
+    bam = np.maximum(bam, -cap(X, Y, Z, BAM_A - u, BAM_A + u * 0.8, 0.45))                  # hollow end
     sprout = rcone(X, Y, Z, (-8.6, -6.3, BASE_TOP - 0.3), (-8.75, -6.45, 7.4), 1.2, 0.35)
     for t in (0.35, 0.65):
         z0 = BASE_TOP + (7.4 - BASE_TOP) * t
