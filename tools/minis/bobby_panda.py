@@ -143,12 +143,11 @@ CHEST_Y = surf_y(torso, [0.0], [17.2])[0]
 SASH_C = 16.6                                                                              # strap plane: x = z - SASH_C
 BUCKLE = np.array([-0.6, surf_y(torso, [-0.6], [16.0])[0] - 0.4, 16.0])
 
-def teardrop(X, Z, top=19.1, bot=12.4, r_top=2.0, r_bot=4.3):
-    """2D (front view) distance to the white chest teardrop: narrow under the chin, round over the belly."""
-    px, pz = np.abs(X), Z - bot; h = top - bot
-    bb = (r_bot - r_top) / h; aa = np.sqrt(1 - bb * bb); k = -bb * px + aa * pz
-    return np.where(k < 0, np.sqrt(px * px + pz * pz) - r_bot,
-                    np.where(k > aa * h, np.sqrt(px * px + (pz - h) ** 2) - r_top, aa * px + bb * pz - r_bot))
+def chest_white(X, Z):
+    """2D (front view) distance to the white chest: wide at the neck (open, it runs up under the jowls), pinched a little
+    where the black shoulder band sweeps in, round over the belly. A gentle wobble keeps the edge organic."""
+    def e2(c, a, b_): return (np.sqrt((X / a) ** 2 + ((Z - c) / b_) ** 2) - 1) * min(a, b_)
+    return smin(e2(12.2, 4.4, 4.1), e2(20.6, 4.8, 5.0), 3.2) + 0.1 * np.sin(1.7 * Z + 0.9 * np.abs(X))
 
 STROKES = []                     # fur strokes (root, tip) in mm; filled by make_strokes()
 def stroke_field(X, Y, Z):
@@ -178,7 +177,7 @@ def make_strokes(spacing=1.55, seed=3):
     x, y, z = p.T
     face = (head(x, y, z) < torso(x, y, z)) & (y < 0.8)
     ear = np.minimum(np.linalg.norm(p - [4.05, 0.3, 28.6], axis=1), np.linalg.norm(p - [-4.05, 0.3, 28.6], axis=1)) < 2.6
-    tummy = (teardrop(x, z) < 0.6) & (y < 0)
+    tummy = (chest_white(x, z) < 0.6) & (y < 0)
     keep = ~(face | ear | tummy | (z < BASE_TOP + 1.6))
     p, n = p[keep], n[keep]
     rng = np.random.default_rng(seed); cell = {}; out = []
@@ -266,8 +265,8 @@ def fields(X, Y, Z):
         pupil = pu if pupil is None else np.minimum(pupil, pu); lines = ln if lines is None else np.minimum(lines, ln)
     body = smax(body, -np.maximum(lines, -body - 0.18), 0.05)
     body = smax(body, -np.maximum(np.maximum(pupil, sclera - 0.02), -body - 0.12), 0.05)       # pupil dimple, inside the white
-    # white chest/tummy: a smooth teardrop from just under the chin to the belly, outlined by the shallow line
-    belly_line = np.maximum(np.abs(teardrop(X, Z)) - 0.15, Y + 1.0)                          # front only
+    # white chest/tummy: an organic U under the chin, outlined by the shallow line (no line across the top)
+    belly_line = np.maximum(np.maximum(np.abs(chest_white(X, Z)) - 0.15, Y + 1.0), Z - 19.4)   # front only, open at the top
     body = smax(body, -np.maximum(belly_line, -body - 0.2), 0.05)
     # sculpted fur: short tapered strokes flowing down the fur (placed by make_strokes(); face and tummy left smooth)
     if STROKES:
@@ -352,7 +351,7 @@ def fields(X, Y, Z):
     solid = np.maximum(solid, -Z)
     # ---------- colour claims (paint guide; priority order is applied in partition())
     black_face = np.minimum(patch, np.minimum(nose - 0.05, pupil))
-    vest = np.maximum(np.maximum(-teardrop(X, Z), torso(X, Y, Z) - head(X, Y, Z)), np.maximum(np.maximum(Y - 1.0, 8.5 - Z), Z - 21.0))   # black round the white chest
+    vest = np.maximum(np.maximum(-chest_white(X, Z), torso(X, Y, Z) - head(X, Y, Z)), np.maximum(np.maximum(Y - 1.0, 4.0 - Z), Z - 21.0))   # black round the white chest, down to the legs
     claims = dict(
         green=green,
         arms=arms - 0.6,               # arms go over the straps
