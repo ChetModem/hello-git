@@ -143,6 +143,66 @@ CHEST_Y = surf_y(torso, [0.0], [17.2])[0]
 SASH_C = 16.6                                                                              # strap plane: x = z - SASH_C
 BUCKLE = np.array([-0.6, surf_y(torso, [-0.6], [16.0])[0] - 0.4, 16.0])
 
+def teardrop(X, Z, top=19.1, bot=12.4, r_top=2.0, r_bot=4.3):
+    """2D (front view) distance to the white chest teardrop: narrow under the chin, round over the belly."""
+    px, pz = np.abs(X), Z - bot; h = top - bot
+    bb = (r_bot - r_top) / h; aa = np.sqrt(1 - bb * bb); k = -bb * px + aa * pz
+    return np.where(k < 0, np.sqrt(px * px + pz * pz) - r_bot,
+                    np.where(k > aa * h, np.sqrt(px * px + (pz - h) ** 2) - r_top, aa * px + bb * pz - r_bot))
+
+STROKES = []                     # fur strokes (root, tip) in mm; filled by make_strokes()
+def stroke_field(X, Y, Z):
+    xs, ys, zs = X[:, 0, 0], Y[0, :, 0], Z[0, 0, :]
+    out = np.full(X.shape, 9.0, F)
+    for a, b in STROKES:
+        lo, hi = np.minimum(a, b) - 0.3, np.maximum(a, b) + 0.3
+        i0, i1 = np.searchsorted(xs, [lo[0], hi[0]]); j0, j1 = np.searchsorted(ys, [lo[1], hi[1]]); k0, k1 = np.searchsorted(zs, [lo[2], hi[2]])
+        if i0 >= i1 or j0 >= j1 or k0 >= k1: continue
+        sl = (slice(i0, i1), slice(j0, j1), slice(k0, k1))
+        out[sl] = np.minimum(out[sl], rcone(X[sl], Y[sl], Z[sl], a, b, 0.15, 0.05))
+    return out
+def make_strokes(spacing=1.55, seed=3):
+    """Scatter fur strokes over the fur surface (Poisson-disk spacing, random length and +-25 deg angle,
+    flowing down and away from the crown). Skips the face, the white tummy, ears, feet soles and gear."""
+    global STROKES
+    STROKES = []
+    xs, ys, zs = grid(0.25)
+    X, Y, Z = np.meshgrid(xs, ys, zs, indexing='ij')
+    solid, claims = fields(X, Y, Z)
+    gx, gy, gz = np.gradient(solid, 0.25)
+    gear = np.minimum(np.minimum(claims['tan'], claims['olive']), np.minimum(claims['green'], claims['base']))
+    cand = (np.abs(solid) < 0.13) & (gear > 0.6)
+    p = np.stack([X[cand], Y[cand], Z[cand]], 1).astype(float)
+    n = np.stack([gx[cand], gy[cand], gz[cand]], 1); n /= np.linalg.norm(n, axis=1, keepdims=True) + 1e-9
+    p -= n * solid[cand][:, None]
+    x, y, z = p.T
+    face = (head(x, y, z) < torso(x, y, z)) & (y < 0.8)
+    ear = np.minimum(np.linalg.norm(p - [4.05, 0.3, 28.6], axis=1), np.linalg.norm(p - [-4.05, 0.3, 28.6], axis=1)) < 2.6
+    tummy = (teardrop(x, z) < 0.6) & (y < 0)
+    keep = ~(face | ear | tummy | (z < BASE_TOP + 1.6))
+    p, n = p[keep], n[keep]
+    rng = np.random.default_rng(seed); cell = {}; out = []
+    for i in rng.permutation(len(p)):
+        c = tuple((p[i] // spacing).astype(int))
+        near = [q for dx in (-1, 0, 1) for dy in (-1, 0, 1) for dz in (-1, 0, 1) for q in cell.get((c[0] + dx, c[1] + dy, c[2] + dz), [])]
+        if any(np.linalg.norm(p[i] - q) < spacing for q in near): continue
+        cell.setdefault(c, []).append(p[i])
+        rad = np.array([p[i][0], p[i][1] - 0.3, 0.0]); rad /= np.linalg.norm(rad) + 1e-9
+        d = np.array([0, 0, -1.0]) + 0.5 * rad                                               # down and away from the crown
+        t = d - (d @ n[i]) * n[i]
+        if np.linalg.norm(t) < 0.2: continue
+        t /= np.linalg.norm(t)
+        ang = np.radians(rng.uniform(-25, 25)); t = t * np.cos(ang) + np.cross(n[i], t) * np.sin(ang)
+        L = rng.uniform(1.1, 1.6)
+        side = np.cross(n[i], t)
+        for k, (off, fan, lf) in enumerate(((-0.34, -9, 0.85), (0.0, 0, 1.0), (0.34, 9, 0.9))):   # a tuft: 3 fanned strokes
+            if k != 1 and rng.random() < 0.25: continue
+            f = np.radians(fan + rng.uniform(-4, 4)); tt = t * np.cos(f) + side * np.sin(f)
+            a = p[i] + n[i] * 0.04 + side * off - t * L * 0.4 + t * rng.uniform(-0.15, 0.15)
+            out.append((a, a + tt * L * lf))
+    STROKES = out
+    return len(out)
+
 def fields(X, Y, Z):
     """Return (solid, {part: claim}) for a chunk. Claims are signed fields (<0 = this colour wants it)."""
     # ---------- panda body
@@ -206,18 +266,18 @@ def fields(X, Y, Z):
         pupil = pu if pupil is None else np.minimum(pupil, pu); lines = ln if lines is None else np.minimum(lines, ln)
     body = smax(body, -np.maximum(lines, -body - 0.18), 0.05)
     body = smax(body, -np.maximum(np.maximum(pupil, sclera - 0.02), -body - 0.12), 0.05)       # pupil dimple, inside the white
-    # tummy patch: the same shallow line round an oval on the belly, with a tufted (sawtooth) fur edge
-    bu, bv = X / 3.7, (Z - 12.3) / 3.5
-    rho, th = np.sqrt(bu * bu + bv * bv), np.arctan2(bv, bu)
-    edge = 1 + 0.08 * np.abs(2 * ((th * 16 / (2 * np.pi)) % 1.0) - 1)                      # continuous zigzag: 16 fur tufts
-    belly_line = np.maximum(np.abs(rho - edge) * 3.6 - 0.15, Y + 1.0)                      # front of the belly only
+    # white chest/tummy: a smooth teardrop from just under the chin to the belly, outlined by the shallow line
+    belly_line = np.maximum(np.abs(teardrop(X, Z)) - 0.15, Y + 1.0)                          # front only
     body = smax(body, -np.maximum(belly_line, -body - 0.2), 0.05)
+    # sculpted fur: short tapered strokes flowing down the fur (placed by make_strokes(); face and tummy left smooth)
+    if STROKES:
+        body = smax(body, -np.maximum(stroke_field(X, Y, Z), -body - 0.16), 0.04)
     nose = ell(X, Y, Z, NOSE, (0.98, 0.62, 0.62), inv(rotm([1, 0, 0], -12)))
     body = smin(body, nose, 0.3)
     grooves = np.minimum(poly(X, Y, Z, MOUTH_R, 0.2), poly(X, Y, Z, MOUTH_L, 0.2))
     grooves = np.minimum(grooves, sph(X, Y, Z, MOUTH_R[-1] + [0, 0.05, 0], 0.27))            # smirk dimple
     grooves = np.minimum(grooves, poly(X, Y, Z, CHIN[1:-1], 0.16))
-    for t in TUFTS: grooves = np.minimum(grooves, rcone(X, Y, Z, t[0], t[1], 0.2, 0.1))   # tapered flicks
+    for t in TUFTS: grooves = np.minimum(grooves, rcone(X, Y, Z, t[0], t[0] + (t[1] - t[0]) * 1.6, 0.15, 0.05))   # chest hair, same style as the fur strokes
     body = smax(body, -grooves, 0.08)
         # ---------- backpack (tan), bedroll (olive), straps (tan)
     tilt = inv(rotm([1, 0, 0], -7))
@@ -292,13 +352,14 @@ def fields(X, Y, Z):
     solid = np.maximum(solid, -Z)
     # ---------- colour claims (paint guide; priority order is applied in partition())
     black_face = np.minimum(patch, np.minimum(nose - 0.05, pupil))
+    vest = np.maximum(np.maximum(-teardrop(X, Z), torso(X, Y, Z) - head(X, Y, Z)), np.maximum(np.maximum(Y - 1.0, 8.5 - Z), Z - 21.0))   # black round the white chest
     claims = dict(
         green=green,
         arms=arms - 0.6,               # arms go over the straps
         tan=tan,
         olive=np.minimum(roll, staff),
         sclera=np.maximum(sclera, -pupil),
-        black=np.minimum(black_fur, black_face),
+        black=np.minimum(np.minimum(black_fur, black_face), vest),
         base=base,
     )
     return solid, claims
@@ -337,6 +398,7 @@ def build(vox, chunk=24):
 
 if __name__ == '__main__':
     vox = float(sys.argv[1]) if len(sys.argv) > 1 else 0.1
+    print('fur strokes:', make_strokes())
     xs, ys, zs, parts, solid = build(vox)
     np.savez(f'bobby_fields_{vox:g}.npz', xs=xs, ys=ys, zs=zs, solid=solid, **parts)
     print('saved', {k: int((v < 0).sum()) for k, v in parts.items()})
