@@ -96,7 +96,7 @@ LA = dict(S=(6.0, 0.6, 19.6), E=(8.2, 0.2, 14.4), W=(6.6, -4.0, 11.9), F=(6.0, -
 BAM_B = np.array([-1.45, -5.95, 22.7])
 BAM_A = BAM_B + (np.array([-11.0, -7.25, 21.35]) - BAM_B) * 0.85      # short stick, held like a cigar
 BAM_A[2] = 23.3                                                         # outer end tipped up: grows out of the fist
-STAFF_TOP, STAFF_BOT = np.array([-8.3, 11.7, 31.0]), np.array([6.6, 10.0, 4.0])   # quarterstaff on the back, 29 deg from vertical
+STAFF_TOP, STAFF_BOT = np.array([-8.3, 5.2, 31.0]), np.array([6.6, 7.6, 4.0])    # quarterstaff slotted between back and pack, 29 deg
 
 def torso(X, Y, Z):
     d = ell(X, Y, Z, (0, 0.3, 11.7), (8.0, 6.8, 7.4))
@@ -196,14 +196,14 @@ def fields(X, Y, Z):
         R = inv(rotm([0, 1, 0], s * 17) @ rotm([0, 0, 1], -s * 18))
         p = ell(X, Y, Z, e + [0, 0.25, 0], (1.75, 1.4, 1.1), R)
         sc = ell(X, Y, Z, e + [0, -0.05, -0.1], (0.95, 0.5, 0.5), R)
-        ld = cap(X, Y, Z, e + [-s * 0.95, 0.02, 0.22] , e + [s * 0.9, 0.0, 0.16], 0.32)
+        ld = np.maximum(ell(X, Y, Z, e + [0, 0.05, 0.22], (1.05, 0.6, 0.42), R), p + 0.15)       # heavy upper lid, kept inside the patch
         pu = sph(X, Y, Z, e + [-s * 0.08, -0.12, -0.12], 0.4)
         patch = p if patch is None else np.minimum(patch, p); sclera = sc if sclera is None else np.minimum(sclera, sc)
         lid = ld if lid is None else np.minimum(lid, ld); pupil = pu if pupil is None else np.minimum(pupil, pu)
     body = body - 0.16 * np.clip(-patch / 0.35, 0, 1)                                     # patches stand proud
     body = body - 0.1 * np.clip(-sclera / 0.25, 0, 1)
     body = body - 0.12 * np.clip(-pupil / 0.2, 0, 1)                                      # domed pupils
-    body = smin(body, lid, 0.12)
+    body = body - 0.14 * np.clip(-lid / 0.18, 0, 1)                                       # lid bulges, no rod ends
     nose = ell(X, Y, Z, NOSE, (0.98, 0.62, 0.62), inv(rotm([1, 0, 0], -12)))
     body = smin(body, nose, 0.3)
     grooves = np.minimum(poly(X, Y, Z, MOUTH_R, 0.2), poly(X, Y, Z, MOUTH_L, 0.2))
@@ -253,14 +253,6 @@ def fields(X, Y, Z):
         staff = smin(staff, cap(X, Y, Z, c - su * 0.08, c + su * 0.08, 1.1), 0.03)
     for c, d_ in ((sa, su), (sb, -su)):                                                       # cord binding near each end
         staff = smin(staff, cap(X, Y, Z, c + d_ * 0.5, c + d_ * 1.3, 1.13), 0.05)
-    loops = None
-    for t in (0.47, 0.64):                                                                    # two straps tie it to the pack
-        c = sa + sax * t
-        rel = (X - c[0]) * su[0] + (Y - c[1]) * su[1] + (Z - c[2]) * su[2]
-        rx, ry, rz = X - c[0] - rel * su[0], Y - c[1] - rel * su[1], Z - c[2] - rel * su[2]
-        lp = np.maximum(np.abs(rel) - 0.4, np.abs(np.sqrt(rx * rx + ry * ry + rz * rz) - 1.15) - 0.25)
-        loops = lp if loops is None else np.minimum(loops, lp)
-    ties = np.minimum(ties, loops)
     tan = np.minimum(np.minimum(pack, straps), ties)
     # ---------- bamboo stick (green), held like a cigar: node rings, slanted cut end on the base
     ax = BAM_B - BAM_A; Lb = np.linalg.norm(ax); u = ax / Lb
@@ -289,7 +281,7 @@ def fields(X, Y, Z):
     # ---------- whole solid
     solid = smin(body, tan, 0.25)
     solid = np.minimum(solid, smin(roll, ties, 0.05))
-    solid = np.minimum(solid, smin(staff, loops, 0.05))
+    solid = np.minimum(solid, staff)
     solid = np.minimum(solid, green)
     solid = np.minimum(solid, base)
     solid = np.maximum(solid, -Z)
@@ -318,7 +310,7 @@ def partition(solid, claims):
     out['white'] = np.maximum(solid, -taken)
     return out
 
-BOUNDS = np.array([[-13.2, 13.2], [-13.2, 13.6], [-0.4, 32.6]])
+BOUNDS = np.array([[-13.2, 13.2], [-13.2, 13.2], [-0.4, 32.6]])
 def grid(vox):
     xs, ys, zs = [np.arange(lo, hi + vox / 2, vox, dtype=F) for lo, hi in BOUNDS]
     return xs, ys, zs
