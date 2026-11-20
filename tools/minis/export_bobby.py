@@ -118,6 +118,9 @@ if __name__ == '__main__':
     s1 = json.loads(json.dumps(settings)); s1.update(SINGLE)
     for k, v in MINI_SPEEDS.items(): s1[k] = [v] * len(s1[k]) if isinstance(s1.get(k), list) else v
     set_filament(s1, 1, SUNLU_PLA_PLUS_2)
+    if float(s1['nozzle_diameter'][0]) <= 0.25:                     # 0.2 mm nozzle: thin first layer, lower flow cap, 4 walls (0.22 mm lines)
+        s1.update({'initial_layer_print_height': '0.1', 'wall_loops': '4'})
+        set_filament(s1, 1, {'filament_max_volumetric_speed': '3'})
     write_3mf(os.path.join(out, 'bobby-panda-mini-single-colour.3mf'), [('Bobby Panda (single colour, for painting)', 1, m)], s1)
     if multi:
         parts = []
