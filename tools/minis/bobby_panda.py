@@ -96,6 +96,7 @@ LA = dict(S=(6.0, 0.6, 19.6), E=(8.2, 0.2, 14.4), W=(6.6, -4.0, 11.9), F=(6.0, -
 BAM_B = np.array([-1.45, -5.95, 22.7])
 BAM_A = BAM_B + (np.array([-11.0, -7.25, 21.35]) - BAM_B) * 0.85      # short stick, held like a cigar
 BAM_A[2] = 23.3                                                         # outer end tipped up: grows out of the fist
+STAFF_TOP, STAFF_BOT = np.array([-8.3, 11.7, 31.0]), np.array([6.6, 10.0, 4.0])   # quarterstaff on the back, 29 deg from vertical
 
 def torso(X, Y, Z):
     d = ell(X, Y, Z, (0, 0.3, 11.7), (8.0, 6.8, 7.4))
@@ -237,13 +238,31 @@ def fields(X, Y, Z):
     shell = np.abs(tors - 0.22) - 0.3
     straps = None
     for s in (-1, 1):
-        st = np.maximum(np.maximum(shell, np.abs((X - STRAP_P0[s][0]) * STRAP_N[s][0] + (Z - STRAP_P0[s][2]) * STRAP_N[s][2]) - 0.68), 12.4 - Z)
+        st = np.maximum(np.maximum(shell, np.abs((X - STRAP_P0[s][0]) * STRAP_N[s][0] + (Z - STRAP_P0[s][2]) * STRAP_N[s][2]) - 0.68), 12.1 - Z)
+        wrap = np.maximum(np.maximum(shell, np.abs(Z - (12.55 + 0.12 * Y)) - 0.62), np.maximum(3.6 - s * X, -3.9 - Y))   # under the arm, round the side
+        st = np.minimum(st, wrap)
         straps = st if straps is None else np.minimum(straps, st)
     chest_strap = np.maximum(np.maximum(shell, np.abs(Z - 17.25) - 0.5), np.maximum(np.abs(X) - 4.6, Y))
     straps = np.minimum(straps, chest_strap)
     straps = np.minimum(straps, rbox(X, Y, Z, (0, CHEST_Y - 0.35, 17.25), (0.75, 0.32, 0.7), 0.15))   # chest buckle
+    sa, sb = STAFF_TOP, STAFF_BOT
+    sax = sb - sa; sL = np.linalg.norm(sax); su = sax / sL
+    staff = cap(X, Y, Z, sa, sb, 1.0)
+    for t in np.arange(0.1, 0.95, 0.14):                                                      # bamboo nodes every ~4 mm
+        c = sa + sax * t
+        staff = smin(staff, cap(X, Y, Z, c - su * 0.08, c + su * 0.08, 1.1), 0.03)
+    for c, d_ in ((sa, su), (sb, -su)):                                                       # cord binding near each end
+        staff = smin(staff, cap(X, Y, Z, c + d_ * 0.5, c + d_ * 1.3, 1.13), 0.05)
+    loops = None
+    for t in (0.47, 0.64):                                                                    # two straps tie it to the pack
+        c = sa + sax * t
+        rel = (X - c[0]) * su[0] + (Y - c[1]) * su[1] + (Z - c[2]) * su[2]
+        rx, ry, rz = X - c[0] - rel * su[0], Y - c[1] - rel * su[1], Z - c[2] - rel * su[2]
+        lp = np.maximum(np.abs(rel) - 0.4, np.abs(np.sqrt(rx * rx + ry * ry + rz * rz) - 1.15) - 0.25)
+        loops = lp if loops is None else np.minimum(loops, lp)
+    ties = np.minimum(ties, loops)
     tan = np.minimum(np.minimum(pack, straps), ties)
-    # ---------- bamboo stick (green), held like a cigar: node rings, slanted cut end; plus two cut stumps on the base
+    # ---------- bamboo stick (green), held like a cigar: node rings, slanted cut end on the base
     ax = BAM_B - BAM_A; Lb = np.linalg.norm(ax); u = ax / Lb
     bam = rcone(X, Y, Z, BAM_A, BAM_B, 0.9, 0.78)
     for t in (0.12, 0.8):                                                                # nodes: a crisp ring with a groove above it
@@ -252,18 +271,7 @@ def fields(X, Y, Z):
     cut_n = nrm(-u + np.array([0, 0, 1.1]))                                                  # slanted cut at the outer end
     bam = np.maximum(bam, ((X - BAM_A[0] - u[0] * 0.5) * cut_n[0] + (Y - BAM_A[1] - u[1] * 0.5) * cut_n[1] + (Z - BAM_A[2] - u[2] * 0.5) * cut_n[2]))
     bam = smax(bam, -sph(X, Y, Z, BAM_A + u * 0.05 + [0, 0, 0.55], 0.5), 0.1)                 # shallow pith dimple on the cut (no thin lip)
-    def stump(cx, cy, h, r, lean):                       # cut bamboo stump: node rings, slanted top
-        a_, b_ = np.array([cx, cy, BASE_TOP - 0.3]), np.array([cx + lean[0], cy + lean[1], BASE_TOP + h])
-        d = cap(X, Y, Z, a_, b_ + [0, 0, 0.6], r)
-        ax_ = nrm(b_ - a_)
-        for t in (0.45, 0.85):
-            c = a_ + (b_ - a_) * t
-            d = smin(d, cap(X, Y, Z, c - ax_ * 0.08, c + ax_ * 0.08, r + 0.1), 0.03)
-        n = nrm(ax_ + [0.5, -0.4, 0])                                                     # slanted cut
-        d = np.maximum(d, (X - b_[0]) * n[0] + (Y - b_[1]) * n[1] + (Z - b_[2]) * n[2])
-        return smax(d, -sph(X, Y, Z, b_ + ax_ * 0.45, r - 0.45), 0.1)                         # shallow dimple, no thin lip
-    sprout = np.minimum(stump(-8.6, -6.3, 4.2, 1.05, (-0.15, -0.1)), stump(-6.7, -8.7, 2.4, 0.85, (0.1, -0.1)))
-    green = np.minimum(bam, sprout)
+    green = bam
     # ---------- flagstone base (grey) with a pebble
     r = np.sqrt(X * X + Y * Y)
     dd = np.stack([(X - sx) ** 2 + (Y - sy) ** 2 for sx, sy in SEEDS])
@@ -281,6 +289,7 @@ def fields(X, Y, Z):
     # ---------- whole solid
     solid = smin(body, tan, 0.25)
     solid = np.minimum(solid, smin(roll, ties, 0.05))
+    solid = np.minimum(solid, smin(staff, loops, 0.05))
     solid = np.minimum(solid, green)
     solid = np.minimum(solid, base)
     solid = np.maximum(solid, -Z)
@@ -290,7 +299,7 @@ def fields(X, Y, Z):
         green=green,
         arms=arms - 0.6,               # arms go over the straps
         tan=tan,
-        olive=roll,
+        olive=np.minimum(roll, staff),
         sclera=np.maximum(sclera, -pupil),
         black=np.minimum(black_fur, black_face),
         base=base,
@@ -309,7 +318,7 @@ def partition(solid, claims):
     out['white'] = np.maximum(solid, -taken)
     return out
 
-BOUNDS = np.array([[-13.2, 13.2], [-13.2, 13.2], [-0.4, 32.0]])
+BOUNDS = np.array([[-13.2, 13.2], [-13.2, 13.6], [-0.4, 32.6]])
 def grid(vox):
     xs, ys, zs = [np.arange(lo, hi + vox / 2, vox, dtype=F) for lo, hi in BOUNDS]
     return xs, ys, zs
