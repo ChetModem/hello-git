@@ -4,7 +4,7 @@ HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, os.path.jo
 import build as B
 P = pickle.load(open(os.path.join(HERE, 'panda_druid_parts.pkl'), 'rb'))
 names = {'base': 'Stone base (grey)', 'white': 'Body (white)', 'black': 'Limbs, ears, eye patches, strap (black)', 'green': 'Bamboo, wreath, staff leaves (green)', 'wood': 'Druid staff (olive)'}
-parts = [(names[k], slot, trimesh.Trimesh(v, f, process=True), {}) for k, (slot, (v, f)) in P.items()]
+parts = [(names[k], slot, trimesh.Trimesh(v, f, process=False), {}) for k, (slot, (v, f)) in P.items()]
 for n, s, m, _ in parts: assert m.is_watertight, n
 OUT = '/home/user/hello-git/minis/panda-druid-mini.3mf'
 d = B.write_project(OUT, [dict(name='Panda druid mini', plate=1, x=128.0, y=128.0, parts=parts)], ['Panda druid mini'])
